@@ -8748,19 +8748,21 @@ export default class GameScene extends Phaser.Scene {
   private applyFireBeamDamageTick() {
     if (this.isInvulnerable) return;
 
-    this.fireBeamBurnMeter += 1;
+    // Beam damage accumulates in milliseconds-equivalent chunks (tick is ~250ms).
+    this.fireBeamBurnMeter += 250;
     if (this.fireBeamBurnDecayTimer) {
       this.fireBeamBurnDecayTimer.remove();
       this.fireBeamBurnDecayTimer = undefined;
     }
 
-    this.fireBeamBurnDecayTimer = this.time.delayedCall(1200, () => {
-      this.fireBeamBurnMeter = Math.max(0, this.fireBeamBurnMeter - 1);
+    // Require near-continuous contact: brief beam breaks reset buildup.
+    this.fireBeamBurnDecayTimer = this.time.delayedCall(500, () => {
+      this.fireBeamBurnMeter = 0;
       this.fireBeamBurnDecayTimer = undefined;
     });
 
-    // Requires sustained beam contact; not instant.
-    if (this.fireBeamBurnMeter >= 3) {
+    // Kill after ~4 seconds of sustained beam contact.
+    if (this.fireBeamBurnMeter >= 4000) {
       this.fireBeamBurnMeter = 0;
       this.handlePlayerDeath();
     }
