@@ -2,6 +2,10 @@ import Phaser from 'phaser';
 import MicTestScene from './scenes/MicTestScene';
 import GameScene from './scenes/GameScene';
 import UIScene from './scenes/UIScene';
+<<<<<<< HEAD
+=======
+import './style.css';
+>>>>>>> Realcodex
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

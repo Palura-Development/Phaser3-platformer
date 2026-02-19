@@ -1,10 +1,29 @@
 import Phaser from 'phaser';
+<<<<<<< HEAD
+=======
+import { createParentOverlay, showParentSummary } from '../parentSummaryOverlay';
+import { createNodePlacements, type Platform, type LetterNode } from '../letterNodes';
+import {
+  endSession,
+  resetLevelProgress,
+  trackDoorWordResult,
+  trackPronunciationAttempt,
+  trackPronunciationWordResult,
+  trackWordAttempt,
+  trackWordFailure,
+  trackWordTimeout
+} from '../analytics';
+>>>>>>> Realcodex
 
 const AUTO_MOVE_THRESHOLD = 10;
 const PLAYER_MAX_VELOCITY_X = 250;
 const PLAYER_ACCELERATION = 900;
 const PLAYER_DRAG = 1400;
+<<<<<<< HEAD
 const PLAYER_JUMP_VELOCITY = -410;
+=======
+const PLAYER_JUMP_VELOCITY = -460; // Increased jump height
+>>>>>>> Realcodex
 const PLAYER_JUMP_SUSTAIN = -350;
 const COYOTE_TIME = 100;
 
@@ -14,6 +33,15 @@ export default class GameScene extends Phaser.Scene {
   private platformLayer!: Phaser.Tilemaps.TilemapLayer;
   private player!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+<<<<<<< HEAD
+=======
+  private wasdKeys?: {
+    up: Phaser.Input.Keyboard.Key;
+    down: Phaser.Input.Keyboard.Key;
+    left: Phaser.Input.Keyboard.Key;
+    right: Phaser.Input.Keyboard.Key;
+  };
+>>>>>>> Realcodex
   private jumpKey?: Phaser.Input.Keyboard.Key;
   private attackKey?: Phaser.Input.Keyboard.Key;
   private spawnPoint!: Phaser.Math.Vector2;
@@ -24,6 +52,10 @@ export default class GameScene extends Phaser.Scene {
   private hazardGroup!: Phaser.Physics.Arcade.StaticGroup;
   private movingHazards: {
     shape: Phaser.GameObjects.Rectangle;
+<<<<<<< HEAD
+=======
+    glow?: Phaser.GameObjects.Rectangle;
+>>>>>>> Realcodex
     body: Phaser.Physics.Arcade.Body;
     axis: 'x' | 'y';
     min: number;
@@ -55,8 +87,31 @@ export default class GameScene extends Phaser.Scene {
     patrolMax: number;
     speed: number;
     isDead: boolean;
+<<<<<<< HEAD
   }[] = [];
   private projectiles: Phaser.GameObjects.Image[] = [];
+=======
+    enemyType: 'basic' | 'snow' | 'fire';
+    snowballCooldown: number;
+    canBeDamagedBy?: string[];
+    fireState?: 'ACTIVE' | 'FROZEN' | 'DEAD';
+    fireBeam?: Phaser.GameObjects.Graphics;
+    fireBeamTargetX?: number;
+    fireBeamTargetY?: number;
+    fireBeamTickCooldown?: number;
+    frozenUntil?: number;
+  }[] = [];
+  private projectiles: Phaser.GameObjects.Image[] = [];
+  private snowballs: Phaser.GameObjects.Image[] = [];
+  private playerHasBlazeSpell = false;
+  private snowDemonsSpawned = false;
+  private playerHasFrostSpell = false;
+  private fireDemonsSpawned = false;
+  private playerSlowMovementMultiplier = 1;
+  private playerSlowTimer?: Phaser.Time.TimerEvent;
+  private fireBeamBurnMeter = 0;
+  private fireBeamBurnDecayTimer?: Phaser.Time.TimerEvent;
+>>>>>>> Realcodex
   private combatKeys: {
     melee: Phaser.Input.Keyboard.Key;
     dash: Phaser.Input.Keyboard.Key;
@@ -96,6 +151,10 @@ export default class GameScene extends Phaser.Scene {
 
   // Jumuf Companion System
   private jumuf?: Phaser.GameObjects.Image;
+<<<<<<< HEAD
+=======
+  private staticGenieNpc?: Phaser.GameObjects.Image;
+>>>>>>> Realcodex
   private jumufBobbingTween?: Phaser.Tweens.Tween;
   private jumufVisible = false; // Start invisible, will appear at beginning then disappear
   private jumufHintBubble?: Phaser.GameObjects.Container;
@@ -106,6 +165,10 @@ export default class GameScene extends Phaser.Scene {
   private diedDuringSpell = false;
 
   private letters: Phaser.GameObjects.Text[] = [];
+<<<<<<< HEAD
+=======
+  private nodeCircles: Phaser.GameObjects.Arc[] = []; // Circular node backgrounds
+>>>>>>> Realcodex
   private manualControlEnabled = true;
   private isTraversing = false;
   private activeTraversalTween?: Phaser.Tweens.Tween;
@@ -128,6 +191,32 @@ export default class GameScene extends Phaser.Scene {
   private wordUIContainer?: Phaser.GameObjects.Container;
   private completedSpellWords: string[] = []; // Words available for voice attacks
 
+<<<<<<< HEAD
+=======
+  // Hook Zone UI System - UNIVERSAL (word-agnostic)
+  private isInHookZone = false;
+  private currentHookZoneIndex = -1;
+  private hookZoneTargetWord = '';
+  private hookZoneCollectedLetters: string[] = [];  // Letters collected (for tracking)
+  private hookZoneSlotState: boolean[] = [];        // Slot-based tracking: true = filled
+  private hookZoneFilledLetters: string[] = [];     // Actual letters in each slot (for display)
+  private hookZoneUI?: Phaser.GameObjects.Container;
+  private hookZoneHintGiven: boolean[] = [false, false, false, false, false];
+  private hookZoneSolved: boolean[] = [false, false, false, false, false]; // Track completed zones
+  private hookZoneExitBlocked = false;              // True while zone is incomplete
+  private hookZoneFirstLetterPreCollected: boolean[] = [false, false, false, false, false]; // Track first letters hooked from outside
+  private hookZoneWordTimer?: Phaser.Time.TimerEvent; // 15s timer for word solving timeout
+  private hookZoneEntryRespawnPoint?: { zoneIndex: number; x: number; y: number };
+  // Hook zones expanded to 700px (800px for HUNGRY with 6 letters) for better node spacing
+  private hookZoneDefinitions = [
+    { start: 700, end: 1400, word: 'BLAZE', hint: 'Something fiery, burning fiercely...' },      // 700px
+    { start: 2050, end: 2750, word: 'FROST', hint: 'Cold and icy, like winter morning dew...' }, // 700px
+    { start: 3400, end: 4100, word: 'STORM', hint: 'A disturbance of weather with thunder and clouds...' }, // 700px
+    { start: 4750, end: 5450, word: 'BLIND', hint: 'Unable to see, lost in darkness...' },      // 700px
+    { start: 6500, end: 7300, word: 'HUNGRY', hint: 'A feeling when you need food...' },        // 800px (6 letters)
+  ];
+
+>>>>>>> Realcodex
   // Voice recognition system
   private completedWords: string[] = [];
   private speechRecognition?: any;
@@ -135,6 +224,10 @@ export default class GameScene extends Phaser.Scene {
   private voiceKey?: Phaser.Input.Keyboard.Key;
   private testKey?: Phaser.Input.Keyboard.Key;
   private doorKey?: Phaser.Input.Keyboard.Key;
+<<<<<<< HEAD
+=======
+  private releaseHookKey?: Phaser.Input.Keyboard.Key; // P key to release hook and drop
+>>>>>>> Realcodex
   private microphoneReady = false;
   
   // Gemini STT for pronunciation detection
@@ -293,6 +386,26 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+<<<<<<< HEAD
+=======
+    resetLevelProgress();
+    this.playerHasBlazeSpell = false;
+    this.snowDemonsSpawned = false;
+    this.playerHasFrostSpell = false;
+    this.fireDemonsSpawned = false;
+    this.playerSlowMovementMultiplier = 1;
+    this.fireBeamBurnMeter = 0;
+    if (this.fireBeamBurnDecayTimer) {
+      this.fireBeamBurnDecayTimer.remove();
+      this.fireBeamBurnDecayTimer = undefined;
+    }
+    this.snowballs = [];
+    if (this.playerSlowTimer) {
+      this.playerSlowTimer.remove();
+      this.playerSlowTimer = undefined;
+    }
+
+>>>>>>> Realcodex
     this.map = this.make.tilemap({ key: 'level1' });
     const tileset = this.map.addTilesetImage('placeholder-tiles', 'tileset');
     if (!tileset) {
@@ -327,6 +440,20 @@ export default class GameScene extends Phaser.Scene {
     );
 
     this.cursors = this.input.keyboard.createCursorKeys();
+<<<<<<< HEAD
+=======
+    this.wasdKeys = this.input.keyboard.addKeys({
+      up: Phaser.Input.Keyboard.KeyCodes.W,
+      down: Phaser.Input.Keyboard.KeyCodes.S,
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D,
+    }) as {
+      up: Phaser.Input.Keyboard.Key;
+      down: Phaser.Input.Keyboard.Key;
+      left: Phaser.Input.Keyboard.Key;
+      right: Phaser.Input.Keyboard.Key;
+    };
+>>>>>>> Realcodex
     this.jumpKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.attackKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
     this.voiceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.V);
@@ -338,6 +465,15 @@ export default class GameScene extends Phaser.Scene {
     // Add test key for checkpoint system (T key)
     this.testKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
 
+<<<<<<< HEAD
+=======
+    // Add P key to release hook and drop from suspension
+    this.releaseHookKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+
+    // Add Enter key for game over review panel (created ONCE, not in update loop)
+    this.gameOverReviewEnterKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+
+>>>>>>> Realcodex
     // Setup voice recognition based on mic test results
     this.time.delayedCall(500, () => {
       this.setupVoiceRecognitionFromTest();
@@ -354,6 +490,10 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, false, 0.15, 0.15);
 
     this.buildManualPlatforms();
+<<<<<<< HEAD
+=======
+    this.buildHookZones();  // Create visual hook zone indicators with dense hazards
+>>>>>>> Realcodex
     this.buildHazards();
     this.physics.add.overlap(this.player, this.hazardGroup, () => this.handleHazardHit(), undefined, this);
 
@@ -365,13 +505,26 @@ export default class GameScene extends Phaser.Scene {
     this.checkpointPosition = new Phaser.Math.Vector2(1600, bandY - 100 - 18); // Platform Y position - platform height to spawn on top
 
     this.createCaveEnvironment();
+<<<<<<< HEAD
+=======
+    this.createStaticGenieNpc();
+>>>>>>> Realcodex
     this.setupIncompleteWords();
     this.createWordUI();
     this.loadNextWord();
 
+<<<<<<< HEAD
     // Create PronunciationDoor at the end of the level
     const doorX = this.map.widthInPixels + 7500; // Near the end
     const doorY = this.map.heightInPixels - 200; // On ground level
+=======
+    // Show hook tutorial overlay (10 seconds)
+    this.showHookTutorial();
+
+    // Create PronunciationDoor at the end section after HUNGRY
+    const doorX = 8500;
+    const doorY = this.map.heightInPixels - 96; // Ground-aligned so it blocks player path
+>>>>>>> Realcodex
     this.pronunciationDoor = new PronunciationDoor(
       this,
       doorX,
@@ -380,10 +533,18 @@ export default class GameScene extends Phaser.Scene {
       (text: string) => this.jumufGiveHint(text),
       () => this.showJumuf()
     );
+<<<<<<< HEAD
+=======
+
+    // Keep parent overlay bootstrapped; do not trigger progress/end flag in this stage
+    createParentOverlay();
+
+>>>>>>> Realcodex
   }
 
   private buildManualPlatforms() {
     const bandY = this.spawnPoint.y - 40;
+<<<<<<< HEAD
     const defs = [
       // Main ground - extended
       {
@@ -472,6 +633,98 @@ export default class GameScene extends Phaser.Scene {
       { x: 9500, y: bandY - 240, width: 160, height: 18 },
       { x: 9700, y: bandY - 160, width: 140, height: 18 },
       { x: 9900, y: bandY - 260, width: 150, height: 18 },
+=======
+    const groundY = this.map.heightInPixels - 16;
+
+    // ========== GROUND SEGMENTS (with gaps for hook zones) ==========
+    // Hook zones (700px wide, 800px for HUNGRY):
+    // Zone 1: 700-1400, Zone 2: 2050-2750, Zone 3: 3400-4100, Zone 4: 4750-5450
+    // Zone 5: 6500-7300, Zone 6: 8300-9000
+    const groundSegments = [
+      { x: 350, y: groundY, width: 700, height: 40 },      // Start to Zone 1 (0-700)
+      { x: 1725, y: groundY, width: 650, height: 40 },     // After Z1 to Z2 (1400-2050)
+      { x: 3075, y: groundY, width: 650, height: 40 },     // After Z2 to Z3 (2750-3400)
+      { x: 4425, y: groundY, width: 650, height: 40 },     // After Z3 to Z4 (4100-4750)
+      { x: 5975, y: groundY, width: 1050, height: 40 },    // After Z4 to Z5 (5450-6500)
+      { x: 8150, y: groundY, width: 1700, height: 40 },    // After Z5 to level end (7300-9000)
+    ];
+
+    // Build ground segments
+    groundSegments.forEach((seg) => this.addPlatformBlock(seg.x, seg.y, seg.width, seg.height));
+
+    const defs = [
+
+      // ========== SIMPLE MARIO-STYLE PLATFORMER LAYOUT ==========
+      // Platforms above ground for variety and letter node placement
+
+      // Starting area - ground level platforms
+      { x: 150, y: bandY, width: 200, height: 18 },
+      { x: 400, y: bandY - 60, width: 150, height: 18 },
+      { x: 600, y: bandY - 100, width: 160, height: 18 },
+
+      // Early section - stepping stones
+      { x: 850, y: bandY - 50, width: 180, height: 18 },
+      { x: 1050, y: bandY - 100, width: 150, height: 18 },
+      { x: 1250, y: bandY - 150, width: 140, height: 18 },
+
+      // Mid-low platforms
+      { x: 1450, y: bandY - 80, width: 160, height: 18 },
+      { x: 1650, y: bandY - 40, width: 170, height: 18 },
+      { x: 1850, y: bandY - 100, width: 150, height: 18 },
+
+      // Climbing section
+      { x: 2050, y: bandY - 140, width: 140, height: 18 },
+      { x: 2250, y: bandY - 180, width: 160, height: 18 },
+      { x: 2450, y: bandY - 120, width: 150, height: 18 },
+
+      // Platform under "T" in FROST hook zone (prevents falling onto spikes)
+      { x: 2710, y: bandY - 50, width: 120, height: 18 },
+
+      // Descent
+      { x: 2650, y: bandY - 80, width: 180, height: 18 },
+      { x: 2850, y: bandY - 40, width: 170, height: 18 },
+      { x: 3050, y: bandY - 100, width: 160, height: 18 },
+
+      // Mid-level platforms
+      { x: 3250, y: bandY - 60, width: 180, height: 18 },
+      { x: 3450, y: bandY - 120, width: 150, height: 18 },
+      { x: 3650, y: bandY - 80, width: 170, height: 18 },
+
+      // Varied heights
+      { x: 3850, y: bandY - 40, width: 160, height: 18 },
+      { x: 4050, y: bandY - 100, width: 150, height: 18 },
+      { x: 4250, y: bandY - 150, width: 140, height: 18 },
+
+      // Easy section
+      { x: 4450, y: bandY - 60, width: 180, height: 18 },
+      { x: 4650, y: bandY - 40, width: 170, height: 18 },
+      { x: 4850, y: bandY - 80, width: 160, height: 18 },
+
+      // Extended area platforms
+      { x: 5050, y: bandY - 50, width: 180, height: 18 },
+      { x: 5250, y: bandY - 100, width: 160, height: 18 },
+      { x: 5450, y: bandY - 70, width: 170, height: 18 },
+
+      { x: 5650, y: bandY - 40, width: 180, height: 18 },
+      { x: 5850, y: bandY - 90, width: 160, height: 18 },
+      { x: 6050, y: bandY - 130, width: 150, height: 18 },
+
+      { x: 6250, y: bandY - 80, width: 170, height: 18 },
+      { x: 6450, y: bandY - 50, width: 180, height: 18 },
+      { x: 6650, y: bandY - 100, width: 160, height: 18 },
+
+      { x: 6850, y: bandY - 60, width: 170, height: 18 },
+      { x: 7050, y: bandY - 40, width: 180, height: 18 },
+      { x: 7250, y: bandY - 90, width: 160, height: 18 },
+      { x: 7260, y: bandY - 20, width: 130, height: 18 }, // Platform under "Y" in HUNGRY zone
+
+      { x: 7450, y: bandY - 130, width: 150, height: 18 },
+      { x: 7650, y: bandY - 80, width: 170, height: 18 },
+      { x: 7850, y: bandY - 50, width: 180, height: 18 },
+
+      { x: 8050, y: bandY - 100, width: 160, height: 18 },
+      { x: 8250, y: bandY - 60, width: 170, height: 18 },
+>>>>>>> Realcodex
     ];
 
     defs.forEach((def) => this.addPlatformBlock(def.x, def.y, def.width, def.height));
@@ -539,6 +792,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.add.collider(this.player, rect);
   }
 
+<<<<<<< HEAD
   private buildHazards() {
     const bandY = this.spawnPoint.y;
     
@@ -680,6 +934,262 @@ export default class GameScene extends Phaser.Scene {
     this.addMovingHazard(5280, bandY - 240, 26, 24, 'y', 110, 85);
 
     // Add demons (keeping existing system)
+=======
+  // ========== HOOK ZONE SYSTEM ==========
+  // Creates visual indicators, dense hazards, and LETTER NODES for hook-mandatory zones
+  // Each zone contains letters that form a complete word for traversal
+  private buildHookZones() {
+    const groundY = this.map.heightInPixels - 16;
+    const zoneHeight = 400; // Height of the visual zone indicator (increased for 450px zones)
+
+    // Use the class-level hookZoneDefinitions (450px wide, 500px for HUNGRY)
+    // This ensures consistency between zone detection and zone rendering
+    this.hookZoneDefinitions.forEach((zone, zoneIndex) => {
+      const zoneWidth = zone.end - zone.start;
+      const zoneCenterX = zone.start + zoneWidth / 2;
+      const letters = zone.word.split('');
+
+      // ===== VISUAL BACKGROUND INDICATOR =====
+      // Dark red/purple tinted background to show danger zone
+      const background = this.add.rectangle(
+        zoneCenterX,
+        groundY - zoneHeight / 2,
+        zoneWidth,
+        zoneHeight,
+        0x4a1942,  // Dark magenta/purple color
+        0.35       // Semi-transparent
+      );
+      background.setDepth(0);
+      background.setScrollFactor(1);
+
+      // Add glowing border effect
+      const borderLeft = this.add.rectangle(
+        zone.start,
+        groundY - zoneHeight / 2,
+        6,
+        zoneHeight,
+        0xff4444,
+        0.7
+      );
+      borderLeft.setDepth(0);
+
+      const borderRight = this.add.rectangle(
+        zone.end,
+        groundY - zoneHeight / 2,
+        6,
+        zoneHeight,
+        0xff4444,
+        0.7
+      );
+      borderRight.setDepth(0);
+
+      // Pulsing animation for borders
+      this.tweens.add({
+        targets: [borderLeft, borderRight],
+        alpha: 0.3,
+        duration: 800,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+
+      // ===== "HOOK ZONE" WARNING TEXT with word hint =====
+      const warningText = this.add.text(
+        zoneCenterX,
+        groundY - zoneHeight + 25,
+        `⚠ HOOK ZONE: ${zone.hint}`,
+        {
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          color: '#ff6666',
+          stroke: '#000000',
+          strokeThickness: 3,
+        }
+      );
+      warningText.setOrigin(0.5);
+      warningText.setDepth(1);
+      warningText.setAlpha(0.9);
+
+      // ===== LETTER NODES INSIDE THE ZONE =====
+      // Position letters in a traversable zigzag pattern
+      const nodeSpacingX = (zoneWidth - 80) / (letters.length - 1);
+      const baseY = groundY - 180; // Base height for nodes
+
+      letters.forEach((letter, i) => {
+        // Zigzag pattern: alternate high and low positions
+        let offsetY = (i % 2 === 0) ? -40 : 40;
+
+        // Special case: Raise the last letter (E) of BLAZE zone higher
+        // This makes it easier to traverse and clearly above the platform
+        if (zoneIndex === 0 && i === letters.length - 1) {
+          offsetY = -100; // Much higher than normal
+        }
+
+        const nodeX = zone.start + 40 + (i * nodeSpacingX);
+        const nodeY = baseY + offsetY;
+
+        // Create the letter node visual (circle + letter)
+        this.createHookZoneLetterNode(nodeX, nodeY, letter, zoneIndex, i);
+      });
+
+      // ===== FAKE DISTRACTION NODES =====
+      // 3 fake nodes per zone with letters NOT in the target word
+      // They look identical to real nodes but prevent word completion
+      const wordLetters = new Set(zone.word.split(''));
+      const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const fakeLetterPool = alphabet.split('').filter(c => !wordLetters.has(c));
+      // Pick 3 distinct fake letters using zone index as seed for consistency
+      const fakeLetters = [
+        fakeLetterPool[(zoneIndex * 3 + 0) % fakeLetterPool.length],
+        fakeLetterPool[(zoneIndex * 3 + 5) % fakeLetterPool.length],
+        fakeLetterPool[(zoneIndex * 3 + 11) % fakeLetterPool.length],
+      ];
+      // Position fake nodes at midpoints between real nodes for even spacing
+      const realNodeXPositions: number[] = [];
+      for (let i = 0; i < letters.length; i++) {
+        realNodeXPositions.push(zone.start + 40 + (i * nodeSpacingX));
+      }
+      const midpoints: number[] = [];
+      for (let i = 0; i < realNodeXPositions.length - 1; i++) {
+        midpoints.push((realNodeXPositions[i] + realNodeXPositions[i + 1]) / 2);
+      }
+      // Pick 3 well-distributed midpoints depending on word length
+      const fakeGapIndices = letters.length <= 5 ? [0, 1, 3] : [0, 2, 4];
+      const fakeYOffsets = [20, -60, 10];
+      const fakePositions = fakeGapIndices.map((gi, fi) => ({
+        x: midpoints[gi],
+        y: baseY + fakeYOffsets[fi],
+      }));
+      fakeLetters.forEach((fakeLetter, fi) => {
+        const pos = fakePositions[fi];
+        this.createHookZoneLetterNode(pos.x, pos.y, fakeLetter, zoneIndex, letters.length + fi);
+      });
+
+      // ===== DENSE SPIKE FIELD =====
+      // Fill the gap with spikes - player cannot walk through
+      for (let x = zone.start + 25; x < zone.end - 25; x += 35) {
+        this.addHazardSpike(x, groundY - 20);
+      }
+
+      // ===== LAVA PIT AT BOTTOM =====
+      // Wide lava pool spanning the hook zone
+      this.addLavaPool(zoneCenterX, groundY - 5, zoneWidth - 50, 15);
+
+      // ===== FLOATING HAZARD (just one per zone) =====
+      // Positioned to not block the letter path
+      this.addMovingHazard(
+        zoneCenterX,
+        groundY - 80,
+        26, 24,
+        'x',
+        80,
+        45
+      );
+
+      // ===== PLATFORM-LEVEL HAZARDS (forces use of hook/grapple mechanic) =====
+      // Vertically moving hazards that sweep through platform heights
+      // Makes standing on platforms dangerous - player must grapple to letter nodes to survive
+      const bandY = this.spawnPoint.y - 40;
+
+      // Left-side vertical sweeper
+      this.addMovingHazard(
+        zone.start + zoneWidth * 0.3,
+        bandY - 80,
+        22, 22,
+        'y',
+        70,
+        40
+      );
+
+      // Right-side vertical sweeper
+      this.addMovingHazard(
+        zone.start + zoneWidth * 0.7,
+        bandY - 50,
+        22, 22,
+        'y',
+        60,
+        35
+      );
+    });
+  }
+
+  // Helper method to create letter nodes inside hook zones
+  private createHookZoneLetterNode(x: number, y: number, letter: string, zoneIndex: number, letterIndex: number) {
+    // Alternate colors for visual variety
+    const useAltColor = letterIndex % 2 === 0;
+    const nodeColor = useAltColor ? 0x10b981 : 0x3b82f6; // Green or blue
+
+    // Create circular node background
+    const circle = this.add.circle(x, y, 28, nodeColor, 0.9);
+    circle.setStrokeStyle(3, 0x1e40af);
+    circle.setDepth(9);
+    this.nodeCircles.push(circle);
+
+    // Create letter text centered in node
+    const text = this.add.text(x, y, letter, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '26px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    text.setOrigin(0.5, 0.5);
+    text.setDepth(10);
+
+    // Store data for hook/traversal system
+    const landingY = y - 20; // Player landing position above node
+    text.setData('landingX', x);
+    text.setData('landingY', landingY);
+    text.setData('letter', letter);
+    text.setData('index', zoneIndex * 10 + letterIndex);
+    text.setData('isRequired', true);
+    text.setData('nodeCircle', circle);
+    text.setData('originalColor', nodeColor);
+
+    // Make interactive for hook targeting
+    text.setInteractive({ useHandCursor: true });
+
+    // Hover effects
+    text.on('pointerover', () => {
+      if (!this.isTraversing && !this.isTransitioningWords) {
+        circle.setFillStyle(0xfbbf24, 1.0); // Yellow highlight
+        circle.setScale(1.15);
+        text.setScale(1.15);
+      }
+    });
+
+    text.on('pointerout', () => {
+      if (!this.isTraversing && !this.isTransitioningWords) {
+        circle.setFillStyle(nodeColor, 0.9);
+        circle.setScale(1);
+        text.setScale(1);
+      }
+    });
+
+    // Click to traverse (hook to this node)
+    text.on('pointerdown', () => this.handleLetterClick(text));
+
+    this.letters.push(text);
+  }
+
+  private buildHazards() {
+    // ========== ADDITIONAL HAZARDS (outside hook zones) ==========
+    // Hook zones already have their own dense hazards (spikes, lava, moving hazards)
+    // These are light hazards in the regular platforming sections for variety
+    const bandY = this.spawnPoint.y;
+
+    // A few scattered spikes in safe areas (not dense - just for variety)
+    const lightSpikes = [
+      { x: 1300, y: bandY - 5 },
+      { x: 2300, y: bandY - 5 },
+      { x: 4500, y: bandY - 5 },
+      { x: 6000, y: bandY - 5 },
+      { x: 7500, y: bandY - 5 },
+    ];
+    lightSpikes.forEach((def) => this.addHazardSpike(def.x, def.y));
+
+    // Add demons
+>>>>>>> Realcodex
     this.buildDemons();
   }
 
@@ -782,7 +1292,30 @@ export default class GameScene extends Phaser.Scene {
     range: number,
     speed: number
   ) {
+<<<<<<< HEAD
     const rect = this.add.rectangle(x, y, width, height, 0xff5c5c).setOrigin(0.5, 0.5).setDepth(4);
+=======
+    const glow = this.add
+      .rectangle(x, y, width + 10, height + 10, 0xff8a8a, 0.36)
+      .setOrigin(0.5, 0.5)
+      .setDepth(3);
+    glow.setBlendMode(Phaser.BlendModes.ADD);
+
+    this.tweens.add({
+      targets: glow,
+      alpha: { from: 0.24, to: 0.56 },
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    const rect = this.add
+      .rectangle(x, y, width, height, 0xff5c5c)
+      .setOrigin(0.5, 0.5)
+      .setDepth(4)
+      .setStrokeStyle(2, 0xffffff, 1);
+>>>>>>> Realcodex
     this.physics.add.existing(rect);
     const body = rect.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
@@ -791,6 +1324,10 @@ export default class GameScene extends Phaser.Scene {
 
     this.movingHazards.push({
       shape: rect,
+<<<<<<< HEAD
+=======
+      glow,
+>>>>>>> Realcodex
       body,
       axis,
       min: axis === 'x' ? x - range : y - range,
@@ -926,6 +1463,7 @@ export default class GameScene extends Phaser.Scene {
       g.destroy();
     }
 
+<<<<<<< HEAD
     // Spawn demons at various locations throughout the level
     // First demon moved further away to give players tutorial time
     const demonSpawns = [
@@ -946,6 +1484,25 @@ export default class GameScene extends Phaser.Scene {
       { x: 8600, y: this.spawnPoint.y - 160 },  // Extended area 6
       { x: 9200, y: this.spawnPoint.y - 280 },  // Extended area 7
       { x: 9800, y: this.spawnPoint.y - 200 },  // Extended area 8
+=======
+    // Spawn demons ONLY in non-hook-zone gaps
+    // Hook zones: 700-1400, 2050-2750, 3400-4100, 4750-5450, 6500-7300
+    // Safe gaps: 0-700, 1400-2050, 2750-3400, 4100-4750, 5450-6500, 7300+
+    const demonSpawns = [
+      { x: 500, y: this.spawnPoint.y - 60 },     // Before Zone 1
+      { x: 1600, y: this.spawnPoint.y - 100 },    // Gap: Z1-Z2
+      { x: 1900, y: this.spawnPoint.y - 80 },     // Gap: Z1-Z2
+      { x: 2900, y: this.spawnPoint.y - 80 },     // Gap: Z2-Z3
+      { x: 3200, y: this.spawnPoint.y - 100 },    // Gap: Z2-Z3
+      { x: 4300, y: this.spawnPoint.y - 80 },     // Gap: Z3-Z4
+      { x: 4550, y: this.spawnPoint.y - 70 },     // Gap: Z3-Z4
+      { x: 5700, y: this.spawnPoint.y - 90 },     // Gap: Z4-Z5
+      { x: 6100, y: this.spawnPoint.y - 110 },    // Gap: Z4-Z5
+      { x: 6300, y: this.spawnPoint.y - 70 },     // Gap: Z4-Z5
+      { x: 7500, y: this.spawnPoint.y - 80 },     // After Z5 to end
+      { x: 7800, y: this.spawnPoint.y - 100 },    // After Z5 to end
+      { x: 8100, y: this.spawnPoint.y - 70 },     // After Z5 to end
+>>>>>>> Realcodex
     ];
 
     console.log(`🔥 Spawning ${demonSpawns.length} demons...`);
@@ -959,6 +1516,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private addDemon(x: number, y: number) {
+<<<<<<< HEAD
+=======
+    if (this.isInsideAnyHookZone(x)) return;
+>>>>>>> Realcodex
     console.log(`Creating demon at (${x}, ${y})`);
     
     const demon = this.add.image(x, y, 'demon')
@@ -1224,14 +1785,49 @@ export default class GameScene extends Phaser.Scene {
         }
       }
       
+<<<<<<< HEAD
+=======
+      // HOOK ZONE CONTAINMENT - Prevent demons from entering hook zones
+      for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+        const zone = this.hookZoneDefinitions[i];
+        if (sprite.x > zone.start && sprite.x < zone.end) {
+          // Demon is inside a hook zone - push it out to nearest edge
+          const distToStart = sprite.x - zone.start;
+          const distToEnd = zone.end - sprite.x;
+          if (distToStart < distToEnd) {
+            sprite.x = zone.start - 10;
+          } else {
+            sprite.x = zone.end + 10;
+          }
+          body.setVelocityX(0);
+          break;
+        }
+      }
+
+>>>>>>> Realcodex
       // Calculate distance to player
       const distanceToPlayer = Phaser.Math.Distance.Between(
         sprite.x, sprite.y,
         this.player.x, this.player.y
       );
 
+<<<<<<< HEAD
       // Chase player if within range (600 pixels - increased range for more aggressive chasing)
       if (distanceToPlayer < 600) {
+=======
+      // Don't chase player into hook zones
+      let playerInHookZone = false;
+      for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+        const zone = this.hookZoneDefinitions[i];
+        if (this.player.x >= zone.start && this.player.x <= zone.end) {
+          playerInHookZone = true;
+          break;
+        }
+      }
+
+      // Chase player if within range (600 pixels) and player is NOT in a hook zone
+      if (distanceToPlayer < 600 && !playerInHookZone) {
+>>>>>>> Realcodex
         const directionX = this.player.x > sprite.x ? 1 : -1;
         const directionY = this.player.y < sprite.y ? -1 : 1;
         
@@ -1325,8 +1921,28 @@ export default class GameScene extends Phaser.Scene {
         body.setVelocityX(body.velocity.x * 0.85);
       }
 
+<<<<<<< HEAD
       // Demon attacks player if very close
       if (distanceToPlayer < 40 && demon.attackCooldown <= 0) {
+=======
+      // Prevent demon from moving into a hook zone (velocity clamp)
+      for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+        const zone = this.hookZoneDefinitions[i];
+        // About to enter from the left
+        if (sprite.x < zone.start && sprite.x > zone.start - 30 && body.velocity.x > 0) {
+          body.setVelocityX(0);
+          sprite.x = zone.start - 10;
+        }
+        // About to enter from the right
+        if (sprite.x > zone.end && sprite.x < zone.end + 30 && body.velocity.x < 0) {
+          body.setVelocityX(0);
+          sprite.x = zone.end + 10;
+        }
+      }
+
+      // Demon attacks player if very close (and player is not in a hook zone)
+      if (distanceToPlayer < 40 && demon.attackCooldown <= 0 && !playerInHookZone) {
+>>>>>>> Realcodex
         this.handleDemonAttack(demon);
         demon.attackCooldown = 800; // Slightly faster attack rate
       }
@@ -1481,7 +2097,108 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+<<<<<<< HEAD
   private handleHazardHit() {
+=======
+  private getHookZoneIndexAtPlayerPosition(): number {
+    if (this.currentHookZoneIndex >= 0 && this.hookZoneDefinitions[this.currentHookZoneIndex]) {
+      return this.currentHookZoneIndex;
+    }
+
+    const playerX = this.player.x;
+    for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+      const zone = this.hookZoneDefinitions[i];
+      if (playerX >= zone.start && playerX <= zone.end) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  private getHookZoneRespawnPoint(zoneIndex: number): { x: number; y: number } | undefined {
+    const zone = this.hookZoneDefinitions[zoneIndex];
+    if (!zone) return undefined;
+
+    if (this.hookZoneEntryRespawnPoint && this.hookZoneEntryRespawnPoint.zoneIndex === zoneIndex) {
+      return {
+        x: this.hookZoneEntryRespawnPoint.x,
+        y: this.hookZoneEntryRespawnPoint.y,
+      };
+    }
+
+    const groundY = this.map.heightInPixels - 16;
+    return { x: zone.start - 50, y: groundY - 60 };
+  }
+
+  private getCompletedHookZoneExitRespawnPointAtPlayerPosition():
+    { zoneIndex: number; x: number; y: number } | undefined {
+    const playerX = this.player.x;
+    const groundY = this.map.heightInPixels - 16;
+    const postZoneRespawnWindow = 220; // "right after" the zone exit
+
+    for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+      if (!this.hookZoneSolved[i]) continue;
+      const zone = this.hookZoneDefinitions[i];
+      if (playerX > zone.end && playerX <= zone.end + postZoneRespawnWindow) {
+        return {
+          zoneIndex: i,
+          x: zone.end + 50,
+          y: groundY - 60,
+        };
+      }
+    }
+
+    return undefined;
+  }
+
+  private respawnAtCompletedHookZoneExitIfNeeded(): boolean {
+    const respawnPoint = this.getCompletedHookZoneExitRespawnPointAtPlayerPosition();
+    if (!respawnPoint) return false;
+
+    this.player.setPosition(respawnPoint.x, respawnPoint.y);
+    console.log(
+      `💀 Died after solved hook zone ${respawnPoint.zoneIndex + 1}. Respawning at zone exit: (${respawnPoint.x}, ${respawnPoint.y})`
+    );
+    return true;
+  }
+
+  private respawnOutsideHookZoneEntranceIfNeeded(): boolean {
+    const zoneIndex = this.getHookZoneIndexAtPlayerPosition();
+    if (zoneIndex < 0) return false;
+
+    const respawnPoint = this.getHookZoneRespawnPoint(zoneIndex);
+    if (!respawnPoint) return false;
+
+    this.player.setPosition(respawnPoint.x, respawnPoint.y);
+    console.log(
+      `💀 Died in hook zone ${zoneIndex + 1}! Respawning BEFORE zone at: (${respawnPoint.x}, ${respawnPoint.y})`
+    );
+    this.exitHookZone();
+    return true;
+  }
+
+  private resetActiveHookZoneProgressOnDeath() {
+    if (!this.isInHookZone || this.currentHookZoneIndex < 0) return;
+    if (this.hookZoneSolved[this.currentHookZoneIndex]) return;
+    if (!this.hookZoneTargetWord) return;
+
+    this.hookZoneCollectedLetters = [];
+    this.hookZoneSlotState = new Array(this.hookZoneTargetWord.length).fill(false);
+    this.hookZoneFilledLetters = new Array(this.hookZoneTargetWord.length).fill('');
+    this.updateHookZoneUI();
+  }
+
+  private handleHazardHit() {
+    this.resetActiveHookZoneProgressOnDeath();
+
+    this.fireBeamBurnMeter = 0;
+    if (this.fireBeamBurnDecayTimer) {
+      this.fireBeamBurnDecayTimer.remove();
+      this.fireBeamBurnDecayTimer = undefined;
+    }
+
+>>>>>>> Realcodex
     // Track death (only if died during spell attempt, not during traversal)
     if (this.diedDuringSpell) {
       this.deaths++;
@@ -1498,12 +2215,24 @@ export default class GameScene extends Phaser.Scene {
     body.setVelocity(0, 0);
     body.setAcceleration(0);
     
+<<<<<<< HEAD
     // ALWAYS respawn at checkpoint once established, NEVER at spawn point
     if (this.checkpointReached && this.checkpointPosition) {
       // Respawn at established checkpoint
       this.player.setPosition(this.checkpointPosition.x, this.checkpointPosition.y);
       console.log(`💀 Died! Respawning at CHECKPOINT: (${this.checkpointPosition.x}, ${this.checkpointPosition.y})`);
       
+=======
+    if (this.respawnOutsideHookZoneEntranceIfNeeded()) {
+      // Hook-zone deaths are zone-local and do not use global checkpoints
+    } else if (this.respawnAtCompletedHookZoneExitIfNeeded()) {
+      // Death just after a solved hook zone respawns at that zone's exit
+    } else if (this.checkpointReached && this.checkpointPosition) {
+      // Respawn at established checkpoint
+      this.player.setPosition(this.checkpointPosition.x, this.checkpointPosition.y);
+      console.log(`💀 Died! Respawning at CHECKPOINT: (${this.checkpointPosition.x}, ${this.checkpointPosition.y})`);
+
+>>>>>>> Realcodex
       // Flash the checkpoint flag to show respawn location (if it exists)
       if (this.checkpointFlag) {
         this.tweens.add({
@@ -1520,8 +2249,42 @@ export default class GameScene extends Phaser.Scene {
       this.player.setPosition(this.spawnPoint.x, this.spawnPoint.y);
       console.log(`⚠️ No checkpoint established yet - respawning at spawn point: (${this.spawnPoint.x}, ${this.spawnPoint.y})`);
     }
+<<<<<<< HEAD
     
     // Reset traversal state
+=======
+
+    // ===== CRITICAL: Reset hook zone state to prevent crashes =====
+    // Stop all player tweens (traversal, suspension floating, etc.)
+    this.tweens.killTweensOf(this.player);
+    if (this.activeTraversalTween) {
+      this.activeTraversalTween.stop();
+      this.activeTraversalTween = undefined;
+    }
+
+    // Reset traversal and suspension state
+    this.isTraversing = false;
+    this.isSuspended = false;
+    this.manualControlEnabled = true;
+
+    // Clear suspension timer and effects
+    if (this.suspensionTimer) {
+      this.suspensionTimer.remove();
+      this.suspensionTimer = undefined;
+    }
+    if (this.suspensionGlowEffect) {
+      this.tweens.killTweensOf(this.suspensionGlowEffect);
+      this.suspensionGlowEffect.destroy();
+      this.suspensionGlowEffect = undefined;
+    }
+
+    // Clear suspension references
+    this.currentSuspendedNode = undefined;
+    this.suspensionLandingY = 0;
+    // ===== END hook zone state reset =====
+
+    // Reset traversal state (additional cleanup)
+>>>>>>> Realcodex
     this.resetTraversalState();
     
     // Reset diedDuringSpell flag after handling
@@ -1538,6 +2301,16 @@ export default class GameScene extends Phaser.Scene {
     this.letters.forEach((letter) => {
       letter.clearTint();
       letter.setInteractive({ useHandCursor: true }); // Re-enable interaction
+<<<<<<< HEAD
+=======
+
+      // Reset node circle appearance
+      const circle = letter.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+      const isRequired = letter.getData('isRequired') as boolean;
+      if (circle) {
+        circle.setAlpha(isRequired ? 0.9 : 0.6); // Reset to original alpha
+      }
+>>>>>>> Realcodex
     });
     
     // Clear collected letters display
@@ -1551,6 +2324,7 @@ export default class GameScene extends Phaser.Scene {
 
   private getLetterPlacements(word: string): { x: number; y: number }[] {
     const bandY = this.spawnPoint.y - 40;
+<<<<<<< HEAD
     
     // Get all platform positions across the level with their widths
     const allPlatformPositions = [
@@ -1615,6 +2389,77 @@ export default class GameScene extends Phaser.Scene {
       { x: 9500, y: bandY - 240, width: 160 },
       { x: 9700, y: bandY - 160, width: 140 },
       { x: 9900, y: bandY - 260, width: 150 },
+=======
+
+    // ========== LETTER NODE POSITIONS ON PLATFORMS ==========
+    // Nodes placed on platforms throughout the level
+    // Matching the platform layout from buildManualPlatforms()
+
+    const allPlatformPositions: Platform[] = [
+      // Starting area platforms
+      { x: 150, y: bandY, width: 200 },
+      { x: 400, y: bandY - 60, width: 150 },
+      { x: 600, y: bandY - 100, width: 160 },
+
+      // Early section
+      { x: 850, y: bandY - 50, width: 180 },
+      { x: 1050, y: bandY - 100, width: 150 },
+      { x: 1250, y: bandY - 150, width: 140 },
+
+      // Mid-low platforms
+      { x: 1450, y: bandY - 80, width: 160 },
+      { x: 1650, y: bandY - 40, width: 170 },
+      { x: 1850, y: bandY - 100, width: 150 },
+
+      // Climbing section
+      { x: 2050, y: bandY - 140, width: 140 },
+      { x: 2250, y: bandY - 180, width: 160 },
+      { x: 2450, y: bandY - 120, width: 150 },
+
+      // Descent
+      { x: 2650, y: bandY - 80, width: 180 },
+      { x: 2850, y: bandY - 40, width: 170 },
+      { x: 3050, y: bandY - 100, width: 160 },
+
+      // Mid-level platforms
+      { x: 3250, y: bandY - 60, width: 180 },
+      { x: 3450, y: bandY - 120, width: 150 },
+      { x: 3650, y: bandY - 80, width: 170 },
+
+      // Varied heights
+      { x: 3850, y: bandY - 40, width: 160 },
+      { x: 4050, y: bandY - 100, width: 150 },
+      { x: 4250, y: bandY - 150, width: 140 },
+
+      // Easy section
+      { x: 4450, y: bandY - 60, width: 180 },
+      { x: 4650, y: bandY - 40, width: 170 },
+      { x: 4850, y: bandY - 80, width: 160 },
+
+      // Extended area
+      { x: 5050, y: bandY - 50, width: 180 },
+      { x: 5250, y: bandY - 100, width: 160 },
+      { x: 5450, y: bandY - 70, width: 170 },
+
+      { x: 5650, y: bandY - 40, width: 180 },
+      { x: 5850, y: bandY - 90, width: 160 },
+      { x: 6050, y: bandY - 130, width: 150 },
+
+      { x: 6250, y: bandY - 80, width: 170 },
+      { x: 6450, y: bandY - 50, width: 180 },
+      { x: 6650, y: bandY - 100, width: 160 },
+
+      { x: 6850, y: bandY - 60, width: 170 },
+      { x: 7050, y: bandY - 40, width: 180 },
+      { x: 7250, y: bandY - 90, width: 160 },
+
+      { x: 7450, y: bandY - 130, width: 150 },
+      { x: 7650, y: bandY - 80, width: 170 },
+      { x: 7850, y: bandY - 50, width: 180 },
+
+      { x: 8050, y: bandY - 100, width: 160 },
+      { x: 8250, y: bandY - 60, width: 170 },
+>>>>>>> Realcodex
     ];
 
     // Define which letters are required for each word
@@ -1630,6 +2475,7 @@ export default class GameScene extends Phaser.Scene {
     const wordLetters = requiredLetters[word] || [];
     if (wordLetters.length === 0) return [];
 
+<<<<<<< HEAD
     // Create a pool of extra letters to scatter around
     const extraLetters = ['A', 'E', 'I', 'O', 'U', 'B', 'C', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
     
@@ -1698,12 +2544,50 @@ export default class GameScene extends Phaser.Scene {
     
     // Return positions for all letters
     return letterPlacements.map(placement => ({ x: placement.x, y: placement.y }));
+=======
+    // Use new node placement system with proper spacing
+    const nodes = createNodePlacements(allPlatformPositions, wordLetters);
+
+    // Store the current word's letter mapping for validation
+    this.currentWordLetterMap = nodes.map(node => ({
+      x: node.x,
+      y: node.y,
+      letter: node.letter,
+      isRequired: node.isRequired
+    }));
+
+    // Verify all required letters are present
+    const requiredLettersFound = this.currentWordLetterMap
+      .filter(p => p.isRequired)
+      .map(p => p.letter);
+    const missingRequiredLetters = wordLetters.filter(
+      letter => !requiredLettersFound.includes(letter)
+    );
+
+    console.log(`📝 Word: ${word}`);
+    console.log(`📝 Required letters: [${wordLetters.join(', ')}]`);
+    console.log(`📝 Required letters spawned: [${requiredLettersFound.join(', ')}]`);
+    console.log(`📝 Total nodes created: ${nodes.length}`);
+
+    if (missingRequiredLetters.length > 0) {
+      console.error(`❌ MISSING REQUIRED LETTERS: [${missingRequiredLetters.join(', ')}]`);
+    } else {
+      console.log(`✅ All required letters spawned with proper spacing!`);
+    }
+
+    // Return positions for all letters (traversal nodes)
+    return this.currentWordLetterMap.map(placement => ({
+      x: placement.x,
+      y: placement.y
+    }));
+>>>>>>> Realcodex
   }
 
   // Add property to track current word's letter mapping
   private currentWordLetterMap: { x: number; y: number; letter: string; isRequired: boolean }[] = [];
 
   private spawnWord(word: string) {
+<<<<<<< HEAD
     // Clear existing letters
     this.letters.forEach((letter) => letter.destroy());
     this.letters = [];
@@ -1714,6 +2598,17 @@ export default class GameScene extends Phaser.Scene {
     this.currentWordLetterMap.forEach((letterData, index) => {
       this.spawnLetterAtPosition(letterData.letter, letterData.x, letterData.y, index, letterData.isRequired);
     });
+=======
+    // ========== LETTER NODES OUTSIDE HOOK ZONES - DISABLED ==========
+    // Letter nodes are now ONLY placed inside hook-mandatory zones.
+    // The buildHookZones() method creates all letter nodes.
+    // This method no longer spawns letters on platforms outside zones.
+
+    // DO NOT clear letters or nodeCircles - they contain the hook zone nodes!
+    // Hook zone letter nodes are created by buildHookZones() and must persist.
+
+    console.log(`📝 Word "${word}" registered - letters only in hook zones`);
+>>>>>>> Realcodex
   }
 
   private loadNextWord() {
@@ -1727,28 +2622,52 @@ export default class GameScene extends Phaser.Scene {
     this.isTransitioningWords = false;
     this.collectedLetters = []; // Reset collected letters for new word
     this.firstLetterCollected = false; // Reset flag trigger for new word
+<<<<<<< HEAD
     
     console.log(`Loading word ${this.currentWordIndex + 1}/${this.wordList.length}: ${this.currentWord}`);
     
+=======
+
+    // Reset word sequence for new word
+    this.currentSequence = '';
+
+    console.log(`Loading word ${this.currentWordIndex + 1}/${this.wordList.length}: ${this.currentWord}`);
+
+>>>>>>> Realcodex
     // Clear collected letters display
     if (this.collectedLettersText) {
       this.collectedLettersText.destroy();
       this.collectedLettersText = undefined;
     }
+<<<<<<< HEAD
     
+=======
+
+    // Clear sequence display
+    if (this.sequenceDisplayText) {
+      this.sequenceDisplayText.destroy();
+      this.sequenceDisplayText = undefined;
+    }
+
+>>>>>>> Realcodex
     // Remove checkpoint flag for new word
     if (this.checkpointFlag) {
       this.checkpointFlag.destroy();
       this.checkpointFlag = undefined;
     }
     this.checkpointReached = false;
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> Realcodex
     this.spawnWord(this.currentWord);
   }
 
 
   private spawnLetterAtPosition(letter: string, platformX: number, platformY: number, index: number, isRequired: boolean = true) {
     const targetX = platformX;
+<<<<<<< HEAD
     const targetY = platformY - 9;  // Platform top - 9px for text positioning
     const landingY = platformY - 14 - this.player.displayHeight / 2;  // Platform top - half-height offset
 
@@ -1769,20 +2688,812 @@ export default class GameScene extends Phaser.Scene {
     text.setOrigin(0.5, 1);
     text.setDepth(10);
     text.setScrollFactor(1);
+=======
+    const targetY = platformY;  // Node position (already offset from platform)
+    const landingY = platformY - this.player.displayHeight / 2;  // Player landing position
+
+    console.log(`Spawning node ${letter} at (${targetX}, ${targetY}), landing at (${targetX}, ${landingY}), required: ${isRequired}`);
+
+    // Create circular node background (blue/green alternating)
+    const useAltColor = index % 3 === 0;
+    const nodeColor = useAltColor ? 0x10b981 : 0x3b82f6; // Green or blue
+    const nodeAlpha = isRequired ? 0.9 : 0.6;
+
+    const circle = this.add.circle(targetX, targetY, 26, nodeColor, nodeAlpha);
+    circle.setStrokeStyle(3, 0x1e40af);
+    circle.setDepth(9);
+    circle.setScrollFactor(1);
+    this.nodeCircles.push(circle);
+
+    // Create letter text centered in node
+    const letterColor = '#ffffff';
+    const text = this.add.text(targetX, targetY, letter, {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '24px',
+      color: letterColor,
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+
+    text.setOrigin(0.5, 0.5);
+    text.setDepth(10);
+    text.setScrollFactor(1);
+    text.setAlpha(isRequired ? 1.0 : 0.7);
+>>>>>>> Realcodex
     text.setInteractive({ useHandCursor: true });
     text.setData('landingX', targetX);
     text.setData('landingY', landingY);
     text.setData('letter', letter);
     text.setData('index', index);
     text.setData('isRequired', isRequired);
+<<<<<<< HEAD
+=======
+    text.setData('nodeCircle', circle); // Link circle to text
+    text.setData('originalColor', nodeColor); // Store original color for hover reset
+
+    // Hover effects
+    text.on('pointerover', () => {
+      if (!this.isTraversing && !this.isTransitioningWords) {
+        // Highlight on hover
+        circle.setFillStyle(0xfbbf24, 1.0); // Yellow highlight
+        circle.setScale(1.1);
+        text.setScale(1.1);
+      }
+    });
+
+    text.on('pointerout', () => {
+      if (!this.isTraversing && !this.isTransitioningWords) {
+        // Reset to original
+        circle.setFillStyle(nodeColor, nodeAlpha);
+        circle.setScale(1.0);
+        text.setScale(1.0);
+      }
+    });
+>>>>>>> Realcodex
 
     text.on('pointerdown', () => this.handleLetterClick(text));
     this.letters.push(text);
 
+<<<<<<< HEAD
     console.log(`Letter ${letter} created at world position (${text.x}, ${text.y}), visible: ${text.visible}, depth: ${text.depth}, required: ${isRequired}`);
   }
 
   private handleLetterClick(letterText: Phaser.GameObjects.Text) {
+=======
+    console.log(`Node ${letter} created at (${text.x}, ${text.y}), required: ${isRequired}`);
+  }
+
+  // ========== WORD-GATED HOOK SYSTEM ==========
+  // Track current word sequence being built
+  private currentSequence: string = '';
+  private hookGraphics?: Phaser.GameObjects.Graphics;
+
+  // Air suspension system
+  private isSuspended: boolean = false;
+  private suspensionTimer?: Phaser.Time.TimerEvent;
+  private suspensionStartTime: number = 0;
+  private hintFlashActive: boolean = false;
+  private currentSuspendedNode?: Phaser.GameObjects.Text; // Node player is currently attached to
+  private suspensionGlowEffect?: Phaser.GameObjects.Arc; // Glow effect around suspended player
+  private suspensionLandingY: number = 0; // Landing Y position for drop
+
+  // ========== HOOK-DISABLED ZONES ==========
+  // DISABLED: Hook is now always enabled so players can use it in Hook Zones
+  // The hook zone system handles when hook traversal is meaningful
+  private hookDisabledZones: { startX: number; endX: number; name: string }[] = [
+    // Empty - hook is enabled everywhere to support hook zone traversal
+  ];
+
+  // ========== WORD DICTIONARY SYSTEM ==========
+  // SPELL WORDS - Special words that unlock spell attacks (NEVER CHANGE THESE)
+  private spellWords = [
+    'FROST', 'STORM', 'BLAZE', 'HUNGRY', 'BLIND', 'DREAM'
+  ];
+
+  // Common English words for general traversal (expanded dictionary)
+  private commonWords = [
+    // Spell word prefixes (needed for word building)
+    'FR', 'FRO', 'FROS', 'STO', 'STOR', 'BLA', 'BLAZ',
+    'HUN', 'HUNG', 'HUNGR', 'BLI', 'BLIN', 'DRE', 'DREA',
+
+    // Common 3-letter words
+    'CAT', 'DOG', 'RAT', 'BAT', 'HAT', 'MAT', 'SAT', 'FAT',
+    'RUN', 'SUN', 'FUN', 'BUN', 'GUN', 'PUN',
+    'CAR', 'BAR', 'JAR', 'TAR', 'FAR', 'WAR',
+    'BAD', 'DAD', 'HAD', 'MAD', 'SAD', 'LAD',
+    'BIG', 'DIG', 'FIG', 'PIG', 'WIG', 'JIG',
+    'RED', 'BED', 'FED', 'LED', 'WED',
+    'AND', 'END', 'FOR', 'THE', 'ARE', 'NOT', 'BUT', 'CAN',
+    'GET', 'GOT', 'HAS', 'HER', 'HIM', 'HIS', 'HOW', 'ITS',
+
+    // Common 4-letter words
+    'WORK', 'WORD', 'WORN', 'WORM', 'WARM',
+    'COLD', 'HOLD', 'GOLD', 'BOLD', 'FOLD', 'TOLD', 'SOLD',
+    'FIRE', 'WIRE', 'TIRE', 'HIRE',
+    'WIND', 'FIND', 'KIND', 'MIND', 'BIND',
+    'DARK', 'PARK', 'MARK', 'BARK',
+    'JUMP', 'PUMP', 'DUMP', 'BUMP', 'LUMP',
+    'HOPE', 'ROPE', 'DOPE', 'COPE',
+    'MAKE', 'TAKE', 'BAKE', 'CAKE', 'WAKE', 'LAKE', 'FAKE',
+    'STAR', 'SCAR', 'SOAR',
+    'BORN', 'CORN', 'HORN', 'TORN', 'WORN',
+    'OVER', 'MOVE', 'LOVE', 'GIVE', 'HAVE', 'COME', 'SOME',
+    'THEN', 'WHEN', 'THAN', 'THAT', 'THIS', 'WITH', 'THEM',
+
+    // Common 5-letter words
+    'MAGIC', 'LIGHT', 'FIGHT', 'NIGHT', 'RIGHT', 'SIGHT', 'TIGHT',
+    'SPACE', 'PLACE', 'TRACE', 'GRACE',
+    'POWER', 'TOWER', 'LOWER',
+    'BRAVE', 'GRAVE', 'CRAVE',
+    'CREAM', 'STEAM', 'GLEAM',
+    'WHICH', 'WOULD', 'COULD', 'THEIR', 'ABOUT', 'AFTER', 'AGAIN',
+  ];
+
+  // Combined validation list (spell words + common words)
+  private get validWords(): string[] {
+    return [...this.spellWords, ...this.commonWords];
+  }
+
+  /**
+   * Check if a word is a special spell word
+   */
+  private isSpellWord(word: string): boolean {
+    return this.spellWords.includes(word.toUpperCase());
+  }
+
+  /**
+   * Check if a sequence is a valid word or valid prefix
+   */
+  private isValidSequence(sequence: string): boolean {
+    const upper = sequence.toUpperCase();
+
+    // Check if it's a complete valid word
+    if (this.validWords.includes(upper)) {
+      return true;
+    }
+
+    // Check if it's a valid prefix of any word
+    return this.validWords.some(word => word.startsWith(upper));
+  }
+
+  /**
+   * Show hook animation from player to target
+   */
+  private showHookAnimation(targetX: number, targetY: number, isValid: boolean) {
+    // Reuse existing graphics object instead of create/destroy cycle
+    if (!this.hookGraphics) {
+      this.hookGraphics = this.add.graphics();
+      this.hookGraphics.setDepth(8);
+      this.hookGraphics.setScrollFactor(1);
+    }
+
+    this.hookGraphics.clear();
+
+    const startX = this.player.x;
+    const startY = this.player.y;
+
+    const lineColor = isValid ? 0x60a5fa : 0xef4444;
+    const lineAlpha = isValid ? 0.8 : 0.5;
+
+    this.hookGraphics.lineStyle(3, lineColor, lineAlpha);
+    this.hookGraphics.beginPath();
+    this.hookGraphics.moveTo(startX, startY);
+    this.hookGraphics.lineTo(targetX, targetY);
+    this.hookGraphics.strokePath();
+
+    // Clear after animation delay
+    this.time.delayedCall(isValid ? 900 : 400, () => {
+      if (this.hookGraphics) {
+        this.hookGraphics.clear();
+      }
+    });
+  }
+
+  /**
+   * Show visual feedback for invalid selection
+   */
+  private showInvalidFeedback(letterText: Phaser.GameObjects.Text) {
+    const circle = letterText.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+
+    // Red flash on node
+    if (circle) {
+      const originalColor = circle.fillColor;
+      circle.setFillStyle(0xef4444, 0.8); // Red
+
+      this.time.delayedCall(200, () => {
+        if (circle && circle.scene) {
+          circle.setFillStyle(originalColor, 0.9);
+        }
+      });
+    }
+
+    // Shake animation
+    this.tweens.add({
+      targets: letterText,
+      x: letterText.x + 5,
+      duration: 50,
+      yoyo: true,
+      repeat: 3,
+      ease: 'Sine.inOut'
+    });
+
+    // Shake node circle too
+    if (circle) {
+      this.tweens.add({
+        targets: circle,
+        x: circle.x + 5,
+        duration: 50,
+        yoyo: true,
+        repeat: 3,
+        ease: 'Sine.inOut'
+      });
+    }
+  }
+
+  /**
+   * Show visual feedback for valid selection
+   */
+  private showValidFeedback(letterText: Phaser.GameObjects.Text) {
+    const circle = letterText.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+
+    // Green glow on valid selection
+    if (circle) {
+      circle.setFillStyle(0x10b981, 1.0); // Bright green
+
+      // Pulse animation
+      this.tweens.add({
+        targets: circle,
+        scaleX: 1.15,
+        scaleY: 1.15,
+        duration: 150,
+        yoyo: true,
+        ease: 'Sine.inOut'
+      });
+    }
+
+    // Scale up text briefly
+    this.tweens.add({
+      targets: letterText,
+      scaleX: 1.2,
+      scaleY: 1.2,
+      duration: 150,
+      yoyo: true,
+      ease: 'Sine.inOut'
+    });
+  }
+
+  /**
+   * Update the sequence display UI
+   * DISABLED: Global "Building:" UI removed - hook zone UI handles word display
+   */
+  private updateSequenceDisplay() {
+    // Clean up any existing display
+    if (this.sequenceDisplayText) {
+      this.sequenceDisplayText.destroy();
+      this.sequenceDisplayText = undefined;
+    }
+    // DO NOT create new text - the hook zone UI handles word display
+  }
+
+  // ========== TUTORIAL & GUIDANCE SYSTEM ==========
+  private tutorialOverlay?: Phaser.GameObjects.Container;
+  private tutorialShown: boolean = false;
+
+  /**
+   * Show centered tutorial overlay (10 seconds)
+   */
+  private showHookTutorial() {
+    if (this.tutorialShown) return;
+    this.tutorialShown = true;
+
+    const centerX = this.cameras.main.width / 2;
+    const centerY = this.cameras.main.height / 2;
+
+    // Semi-transparent background
+    const bg = this.add.rectangle(centerX, centerY, 600, 380, 0x000000, 0.85);
+    bg.setScrollFactor(0);
+    bg.setDepth(2000);
+
+    // Title text
+    const title = this.add.text(centerX, centerY - 150, '🪝 HOOK TRAVERSAL', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '32px',
+      color: '#fbbf24',
+      stroke: '#000000',
+      strokeThickness: 4,
+      fontStyle: 'bold'
+    });
+    title.setOrigin(0.5);
+    title.setScrollFactor(0);
+    title.setDepth(2001);
+
+    // Instructions
+    const instructions = this.add.text(
+      centerX, centerY - 30,
+      'Click letter nodes to form words\nValid words pull you across gaps\n\nExamples: CAT, FROST, DREAM\n\nUse WASD to move normally\nUse hooks when jumping is impossible',
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '18px',
+        color: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 2,
+        align: 'center',
+        lineSpacing: 8
+      }
+    );
+    instructions.setOrigin(0.5);
+    instructions.setScrollFactor(0);
+    instructions.setDepth(2001);
+
+    // Countdown timer (INCREASED to 30 seconds for better learning)
+    const timer = this.add.text(centerX, centerY + 155, '30', {
+      fontFamily: 'Arial, sans-serif',
+      fontSize: '24px',
+      color: '#60a5fa',
+      stroke: '#000000',
+      strokeThickness: 3,
+    });
+    timer.setOrigin(0.5);
+    timer.setScrollFactor(0);
+    timer.setDepth(2001);
+
+    // Store in container for easy cleanup
+    this.tutorialOverlay = this.add.container(0, 0, [bg, title, instructions, timer]);
+    this.tutorialOverlay.setDepth(2000);
+
+    // Countdown animation (30 seconds total)
+    let countdown = 30;
+    const countdownInterval = this.time.addEvent({
+      delay: 1000,
+      repeat: 29, // 30 iterations
+      callback: () => {
+        countdown--;
+        timer.setText(countdown.toString());
+
+        if (countdown === 0) {
+          // Fade out and destroy
+          this.tweens.add({
+            targets: this.tutorialOverlay,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => {
+              if (this.tutorialOverlay) {
+                this.tutorialOverlay.destroy();
+                this.tutorialOverlay = undefined;
+              }
+            }
+          });
+        }
+      }
+    });
+
+    // Optional: Allow player to close early with click
+    bg.setInteractive();
+    bg.on('pointerdown', () => {
+      if (this.tutorialOverlay) {
+        countdownInterval.remove();
+        this.tutorialOverlay.destroy();
+        this.tutorialOverlay = undefined;
+      }
+    });
+  }
+
+  /**
+   * Djinn gives guidance when player is in difficult area
+   */
+  private giveDjinnHookGuidance() {
+    const guidance = [
+      "Try using the hook to traverse this gap!",
+      "Form words by clicking letter nodes.",
+      "The hook can pull you across impossible jumps.",
+      "Look for letter nodes above the hazards.",
+      "Build words like CAT, FROST, or DREAM to hook across!"
+    ];
+
+    const randomGuidance = Phaser.Utils.Array.GetRandom(guidance);
+    this.jumufGiveHint(randomGuidance);
+  }
+
+  /**
+   * Check if player should receive hook guidance (called periodically)
+   */
+  private hookGuidanceFrameCounter = 0;
+  private checkForHookGuidanceNeeded() {
+    // Throttle: only check every 360 frames (~6 seconds at 60fps) to avoid
+    // expensive distance calculations on 50+ letter nodes every single frame
+    this.hookGuidanceFrameCounter++;
+    if (this.hookGuidanceFrameCounter < 360) return;
+    this.hookGuidanceFrameCounter = 0;
+
+    if (this.isTraversing) return;
+    if (this.jumufHintBubble) return;
+
+    // Check if player is near any letter node
+    const px = this.player.x;
+    const py = this.player.y;
+    let nearNode = false;
+    for (let i = 0; i < this.letters.length; i++) {
+      const letter = this.letters[i];
+      const dx = px - letter.x;
+      const dy = py - letter.y;
+      if (dx * dx + dy * dy < 90000) { // 300^2
+        nearNode = true;
+        break; // Early exit - only need to know if ANY node is near
+      }
+    }
+
+    if (nearNode) {
+      this.giveDjinnHookGuidance();
+    }
+  }
+
+  // ========== AIR SUSPENSION SYSTEM ==========
+  /**
+   * Start 15-second air suspension after hooking to node
+   * Player floats in air and can click next node
+   * After 10 seconds: Flash nearby letters purple as hint
+   * After 15 seconds: Safely drop if no action taken
+   */
+  private startAirSuspension(
+    x: number,
+    y: number,
+    landingY: number,
+    collectedLetter: string,
+    letterNode: Phaser.GameObjects.Text
+  ) {
+    // Mark as suspended
+    this.isSuspended = true;
+    this.suspensionStartTime = this.time.now;
+    this.hintFlashActive = false;
+
+    // Store references for click-to-drop mechanic
+    this.currentSuspendedNode = letterNode;
+    this.suspensionLandingY = landingY;
+
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+
+    // Position player at node location (suspended in air)
+    body.enable = true;
+    body.setAllowGravity(false); // No gravity while suspended
+    this.player.setPosition(x, y);
+    body.setVelocity(0, 0);
+
+    // Player can interact but is still "traversing" (prevents manual movement)
+    this.isTraversing = false; // Allow clicking other nodes
+    this.manualControlEnabled = false; // But disable WASD movement
+
+    // Floating animation (gentle bobbing)
+    this.tweens.add({
+      targets: this.player,
+      y: y - 10,
+      duration: 1500,
+      yoyo: true,
+      repeat: 7, // Repeat for full suspension duration (10s)
+      ease: 'Sine.inOut'
+    });
+
+    // Visual indicator - glowing aura around player
+    const suspensionGlow = this.add.circle(x, y, 40, 0x60a5fa, 0.3);
+    suspensionGlow.setDepth(4);
+
+    // Store glow effect reference
+    this.suspensionGlowEffect = suspensionGlow;
+
+    this.tweens.add({
+      targets: suspensionGlow,
+      alpha: 0.6,
+      scaleX: 1.3,
+      scaleY: 1.3,
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut'
+    });
+
+    // Update checkpoint and show letters
+    this.updateCheckpointPosition(x, landingY);
+    this.checkSpellWordCompletion(collectedLetter);
+    this.updateCollectedLettersDisplay();
+
+    this.emitSpark(x, y);
+
+    // Clear any existing suspension timer
+    if (this.suspensionTimer) {
+      this.suspensionTimer.remove();
+    }
+
+    // Timer for 8-second hint (flash purple)
+    this.time.delayedCall(8000, () => {
+      if (this.isSuspended) {
+        this.flashNearbyLettersPurple();
+        this.jumufGiveHint('Try connecting to nearby letters!');
+      }
+    });
+
+    // Timer for 10-second drop
+    this.suspensionTimer = this.time.delayedCall(10000, () => {
+      if (this.isSuspended) {
+        this.endAirSuspension();
+      }
+    });
+  }
+
+  /**
+   * End air suspension - drop player safely to platform
+   */
+  private endAirSuspension() {
+    this.isSuspended = false;
+    this.hintFlashActive = false;
+
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+
+    // Stop floating animation
+    this.tweens.killTweensOf(this.player);
+
+    // Destroy glow effect
+    if (this.suspensionGlowEffect) {
+      this.tweens.killTweensOf(this.suspensionGlowEffect);
+      this.suspensionGlowEffect.destroy();
+      this.suspensionGlowEffect = undefined;
+    }
+
+    // Use stored landing Y position
+    const landingY = this.suspensionLandingY;
+
+    // Animate safe drop to platform
+    this.tweens.add({
+      targets: this.player,
+      y: landingY,
+      duration: 500,
+      ease: 'Cubic.out',
+      onComplete: () => {
+        // Re-enable gravity and movement
+        body.setAllowGravity(true);
+        body.setVelocity(0, 0);
+        this.manualControlEnabled = true;
+
+        this.emitSpark(this.player.x, landingY);
+      }
+    });
+
+    // Clear references
+    this.currentSuspendedNode = undefined;
+    this.suspensionLandingY = 0;
+  }
+
+  /**
+   * Land player immediately without air suspension
+   * Used when word is complete - player drops to platform right away
+   */
+  private landPlayerImmediately(x: number, landingY: number) {
+    // Make sure we're not suspended
+    this.isSuspended = false;
+    this.hintFlashActive = false;
+
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+
+    // Stop any floating animations
+    this.tweens.killTweensOf(this.player);
+
+    // Destroy glow effect if exists
+    if (this.suspensionGlowEffect) {
+      this.tweens.killTweensOf(this.suspensionGlowEffect);
+      this.suspensionGlowEffect.destroy();
+      this.suspensionGlowEffect = undefined;
+    }
+
+    // Quick drop animation to landing position
+    this.tweens.add({
+      targets: this.player,
+      y: landingY,
+      duration: 300, // Faster than normal drop
+      ease: 'Cubic.out',
+      onComplete: () => {
+        // Re-enable gravity and movement
+        body.enable = true;
+        body.setAllowGravity(true);
+        body.setVelocity(0, 0);
+        this.isTraversing = false;
+        this.manualControlEnabled = true;
+
+        this.emitSpark(x, landingY);
+
+        // Show "You can now exit!" message
+        this.showZoneCompleteExitMessage();
+      }
+    });
+
+    // Clear references
+    this.currentSuspendedNode = undefined;
+    this.suspensionLandingY = 0;
+  }
+
+  /**
+   * Show message that player can now exit the zone
+   */
+  private showZoneCompleteExitMessage() {
+    const exitText = this.add.text(
+      this.player.x,
+      this.player.y - 60,
+      '✓ Word Complete!\nYou can exit now!',
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '16px',
+        color: '#22c55e',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'center',
+      }
+    );
+    exitText.setOrigin(0.5);
+    exitText.setDepth(2000);
+
+    // Fade out and destroy
+    this.tweens.add({
+      targets: exitText,
+      alpha: 0,
+      y: exitText.y - 40,
+      duration: 2000,
+      onComplete: () => exitText.destroy(),
+    });
+  }
+
+  /**
+   * Flash nearby letters purple as hint (after 10 seconds suspended)
+   */
+  private flashNearbyLettersPurple() {
+    this.hintFlashActive = true;
+
+    // Find nearby uncollected letters
+    const nearbyLetters = this.letters.filter(letter => {
+      if (!letter.active) return false; // Skip collected letters
+
+      const dist = Phaser.Math.Distance.Between(
+        this.player.x, this.player.y,
+        letter.x, letter.y
+      );
+      return dist < 250; // Within 250px
+    });
+
+    // Flash each nearby letter purple
+    nearbyLetters.forEach(letter => {
+      const circle = letter.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+
+      if (circle) {
+        // Purple flash animation (repeating)
+        const flashTween = this.tweens.add({
+          targets: circle,
+          fillColor: { from: circle.fillColor, to: 0xa855f7 }, // Purple
+          duration: 500,
+          yoyo: true,
+          repeat: 10, // Flash for 5 seconds
+          ease: 'Sine.inOut'
+        });
+
+        // Store tween so we can stop it when suspension ends
+        letter.setData('hintFlash', flashTween);
+      }
+
+      // Also flash the letter text
+      this.tweens.add({
+        targets: letter,
+        scale: 1.3,
+        duration: 500,
+        yoyo: true,
+        repeat: 10,
+        ease: 'Sine.inOut'
+      });
+    });
+  }
+
+  /**
+   * Cancel air suspension early (when player clicks another node)
+   */
+  /**
+   * Check if player is in a hook-disabled zone
+   */
+  private isInHookDisabledZone(playerX: number): { startX: number; endX: number; name: string } | null {
+    for (const zone of this.hookDisabledZones) {
+      if (playerX >= zone.startX && playerX <= zone.endX) {
+        return zone;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Show feedback when hook is disabled in current zone
+   */
+  private showHookDisabledFeedback(zoneName: string) {
+    // Create warning message
+    const warningText = this.add.text(
+      this.player.x,
+      this.player.y - 60,
+      '🚫 Hook Disabled\nUse WASD to move',
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '16px',
+        color: '#ff6b6b',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'center'
+      }
+    ).setOrigin(0.5).setDepth(1000);
+
+    // Animate warning
+    this.tweens.add({
+      targets: warningText,
+      y: this.player.y - 80,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Power2.easeOut',
+      onComplete: () => warningText.destroy()
+    });
+
+    // Flash player red briefly
+    this.player.setTint(0xff0000);
+    this.time.delayedCall(200, () => {
+      this.player.clearTint();
+    });
+
+    // Show zone name hint from Djinn
+    this.jumufGiveHint(`You're in a ${zoneName}. Use arrow keys or WASD to move!`);
+  }
+
+  private cancelAirSuspension() {
+    if (!this.isSuspended) return;
+
+    // Clear timers
+    if (this.suspensionTimer) {
+      this.suspensionTimer.remove();
+      this.suspensionTimer = undefined;
+    }
+
+    // CRITICAL: Stop the floating animation on the player
+    // This prevents the old tween from conflicting with new traversal
+    this.tweens.killTweensOf(this.player);
+
+    // Destroy glow effect
+    if (this.suspensionGlowEffect) {
+      this.tweens.killTweensOf(this.suspensionGlowEffect);
+      this.suspensionGlowEffect.destroy();
+      this.suspensionGlowEffect = undefined;
+    }
+
+    // Stop hint flashes
+    if (this.hintFlashActive) {
+      this.letters.forEach(letter => {
+        const flashTween = letter.getData('hintFlash');
+        if (flashTween) {
+          flashTween.stop();
+        }
+
+        // Also stop text scale animation
+        this.tweens.killTweensOf(letter);
+      });
+    }
+
+    this.isSuspended = false;
+    this.hintFlashActive = false;
+
+    // Clear references
+    this.currentSuspendedNode = undefined;
+    this.suspensionLandingY = 0;
+  }
+
+  private handleLetterClick(letterText: Phaser.GameObjects.Text) {
+    // CHECK: If clicking the SAME node while suspended - DROP EARLY
+    if (this.isSuspended && letterText === this.currentSuspendedNode) {
+      this.endAirSuspension();
+      return;
+    }
+
+    // Cancel air suspension if player clicks DIFFERENT node while suspended
+    if (this.isSuspended) {
+      this.cancelAirSuspension();
+    }
+
+>>>>>>> Realcodex
     if (this.isTraversing || this.isTransitioningWords) {
       return;
     }
@@ -1790,11 +3501,16 @@ export default class GameScene extends Phaser.Scene {
     const letter = letterText.getData('letter') as string;
     const targetX = letterText.getData('landingX') as number | undefined;
     const landingY = letterText.getData('landingY') as number | undefined;
+<<<<<<< HEAD
+=======
+    const nodeY = letterText.y; // Node's Y position (for suspension)
+>>>>>>> Realcodex
 
     if (targetX === undefined || landingY === undefined) {
       return;
     }
 
+<<<<<<< HEAD
     console.log(`Collecting letter: ${letter}`);
 
     // Add letter to collected letters
@@ -1806,12 +3522,290 @@ export default class GameScene extends Phaser.Scene {
     // Remove interactivity so it can't be collected again
     letterText.disableInteractive();
 
+=======
+    // CHECK: Is player in a hook-disabled zone?
+    const disabledZone = this.isInHookDisabledZone(this.player.x);
+    if (disabledZone) {
+      this.showHookDisabledFeedback(disabledZone.name);
+      return;
+    }
+
+    // ========== HOOK ZONE UNIVERSAL LOGIC ==========
+    // Inside hook zones: ALWAYS allow traversal, bypass sequence validation
+    // This is CRITICAL for word-agnostic behavior
+    if (this.isInHookZone && this.currentHookZoneIndex >= 0) {
+      // Check if this zone is already solved
+      // ALWAYS show valid hook animation in hook zones
+      this.showHookAnimation(targetX, letterText.y, true);
+
+      // Show valid feedback
+      this.showValidFeedback(letterText);
+
+      // Collect the letter for this zone (slot-based, universal)
+      this.collectHookZoneLetter(letter);
+
+      // Check if word is NOW complete after collecting this letter
+      const targetWord = this.hookZoneTargetWord || '';
+      const slotState = this.hookZoneSlotState || [];
+
+      const allSlotsFilled = targetWord.length > 0 &&
+                             slotState.length === targetWord.length &&
+                             slotState.every(filled => filled);
+      const allLettersCorrect = allSlotsFilled &&
+                                this.hookZoneFilledLetters.every((l, i) => l === targetWord[i]);
+      const isWordComplete = allLettersCorrect ||
+                             (this.currentHookZoneIndex >= 0 && this.hookZoneSolved[this.currentHookZoneIndex]);
+
+      // Mark letter as collected visually
+      letterText.setTint(0x10b981); // Green tint
+      const circle = letterText.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+      if (circle) {
+        circle.setAlpha(0.4);
+      }
+      letterText.disableInteractive();
+
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+
+      // ===== WORD COMPLETE: INSTANT DROP TO PLATFORM =====
+      if (isWordComplete) {
+        // Mark zone as solved (in case it wasn't already)
+        if (this.currentHookZoneIndex >= 0) {
+          this.hookZoneSolved[this.currentHookZoneIndex] = true;
+        }
+
+        // Stop any existing tweens/movement
+        this.tweens.killTweensOf(this.player);
+        this.activeTraversalTween?.stop();
+
+        // Clear suspension state
+        this.isSuspended = false;
+        if (this.suspensionTimer) {
+          this.suspensionTimer.remove();
+          this.suspensionTimer = undefined;
+        }
+        if (this.suspensionGlowEffect) {
+          this.tweens.killTweensOf(this.suspensionGlowEffect);
+          this.suspensionGlowEffect.destroy();
+          this.suspensionGlowEffect = undefined;
+        }
+
+        // Emit spark at current position
+        this.emitSpark(this.player.x, this.player.y);
+
+        // Instantly position player at the landing spot
+        this.player.setPosition(targetX, landingY);
+
+        // Re-enable physics and movement immediately
+        body.enable = true;
+        body.setAllowGravity(true);
+        body.setVelocity(0, 0);
+        this.isTraversing = false;
+        this.manualControlEnabled = true;
+
+        // Visual celebration
+        this.emitSpark(targetX, landingY);
+
+        // Update the UI to show completion
+        this.updateHookZoneUI();
+
+        // Show exit message
+        this.showZoneCompleteExitMessage();
+
+        return; // Exit - word complete, player landed
+      }
+
+      // ===== WORD NOT COMPLETE: Normal traversal with suspension =====
+      this.isTraversing = true;
+      this.manualControlEnabled = false;
+
+      body.stop();
+      body.setAllowGravity(false);
+      body.enable = false;
+
+      const startX = this.player.x;
+      const startY = this.player.y;
+
+      this.activeTraversalTween?.stop();
+      this.activeTraversalTween = this.tweens.add({
+        targets: this.player,
+        x: targetX,
+        duration: 900,
+        ease: Phaser.Math.Easing.Sine.InOut,
+        onStart: () => this.emitSpark(startX, startY),
+        onUpdate: (tween) => {
+          const progress = tween.progress;
+          const baseY = Phaser.Math.Linear(startY, landingY, progress);
+          this.player.y = baseY - Math.sin(progress * Math.PI) * 80;
+
+          // Particle trail during traversal
+          if (progress > 0.1 && progress < 0.9 && Math.random() > 0.7) {
+            this.emitTrailParticle(this.player.x, this.player.y);
+          }
+        },
+        onComplete: () => {
+          // Start air suspension at the node (word not complete yet)
+          this.startAirSuspension(targetX, nodeY, landingY, letter, letterText);
+        },
+      });
+
+      return; // Exit - hook zone logic complete
+    }
+    // ========== END HOOK ZONE LOGIC ==========
+
+    // ========== SPECIAL: First letter of hook zone hookable from OUTSIDE ==========
+    if (!this.isInHookZone) {
+      const clickedNodeIndex = letterText.getData('index') as number;
+      const isHookZoneNode = letterText.getData('isRequired') as boolean;
+
+      if (isHookZoneNode && clickedNodeIndex !== undefined) {
+        const clickedZoneIndex = Math.floor(clickedNodeIndex / 10);
+        const clickedLetterIndex = clickedNodeIndex % 10;
+
+        if (clickedLetterIndex === 0 &&
+            clickedZoneIndex >= 0 &&
+            clickedZoneIndex < this.hookZoneDefinitions.length &&
+            !this.hookZoneSolved[clickedZoneIndex]) {
+
+          // Mark as pre-collected for when player enters zone
+          this.hookZoneFirstLetterPreCollected[clickedZoneIndex] = true;
+
+          // Show hook animation and valid feedback
+          this.showHookAnimation(targetX, letterText.y, true);
+          this.showValidFeedback(letterText);
+
+          // Mark letter as collected visually
+          letterText.setTint(0x10b981);
+          const nodeCircle = letterText.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+          if (nodeCircle) nodeCircle.setAlpha(0.4);
+          letterText.disableInteractive();
+
+          // Hook traversal to the letter node
+          this.isTraversing = true;
+          this.manualControlEnabled = false;
+
+          const body = this.player.body as Phaser.Physics.Arcade.Body;
+          body.stop();
+          body.setAllowGravity(false);
+          body.enable = false;
+
+          const startX = this.player.x;
+          const startY = this.player.y;
+
+          this.activeTraversalTween?.stop();
+          this.activeTraversalTween = this.tweens.add({
+            targets: this.player,
+            x: targetX,
+            duration: 900,
+            ease: Phaser.Math.Easing.Sine.InOut,
+            onStart: () => this.emitSpark(startX, startY),
+            onUpdate: (tween) => {
+              const progress = tween.progress;
+              const baseY = Phaser.Math.Linear(startY, landingY, progress);
+              this.player.y = baseY - Math.sin(progress * Math.PI) * 80;
+              if (progress > 0.1 && progress < 0.9 && Math.random() > 0.7) {
+                this.emitTrailParticle(this.player.x, this.player.y);
+              }
+            },
+            onComplete: () => {
+              // Start air suspension at the node
+              this.startAirSuspension(targetX, nodeY, landingY, letter, letterText);
+            },
+          });
+
+          return; // Don't fall through to normal outside-zone handling
+        }
+      }
+    }
+    // ========== END FIRST LETTER SPECIAL CASE ==========
+
+    // Outside hook zones: Use original sequence validation
+    const newSequence = this.currentSequence + letter;
+
+    // Validate the new sequence
+    const isValid = this.isValidSequence(newSequence);
+
+    // Show hook animation regardless
+    this.showHookAnimation(targetX, letterText.y, isValid);
+
+    if (!isValid) {
+      // INVALID SEQUENCE - Hook fails safely
+      this.showInvalidFeedback(letterText);
+
+      // Update display to show failed attempt
+      this.updateSequenceDisplay();
+
+      return; // Do NOT move the player
+    }
+
+    // VALID SEQUENCE - Hook succeeds!
+
+    // Update sequence
+    this.currentSequence = newSequence;
+
+    // Update the visual sequence display
+    this.updateSequenceDisplay();
+
+    // Show valid feedback
+    this.showValidFeedback(letterText);
+
+    // Add letter to collected letters
+    this.collectedLetters.push(letter);
+
+    // Update hook zone UI if in a hook zone
+    this.onHookZoneLetterCollected(letter);
+
+    // Mark letter as collected (tint green to show success)
+    letterText.setTint(0x10b981); // Green tint for valid
+
+    // Dim the node circle to show it's collected
+    const circle = letterText.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+    if (circle) {
+      circle.setAlpha(0.4); // Dim collected nodes
+    }
+
+    // Remove interactivity so it can't be collected again
+    letterText.disableInteractive();
+
+    // Check if we completed a full word
+    if (this.validWords.includes(newSequence.toUpperCase()) &&
+        newSequence.length >= 4) { // Only reset on meaningful words
+      const isSpell = this.isSpellWord(newSequence);
+
+      if (isSpell) {
+        // Special feedback for spell words
+        this.jumufGiveHint(`Spell word "${newSequence}" unlocked! Use it to cast spells!`);
+
+        // Extra particle effects for spell completion
+        for (let i = 0; i < 10; i++) {
+          this.time.delayedCall(i * 50, () => {
+            this.emitSpark(this.player.x + Phaser.Math.Between(-30, 30), this.player.y + Phaser.Math.Between(-30, 30));
+          });
+        }
+      }
+
+      // Reset sequence after completing a word
+      this.time.delayedCall(1000, () => {
+        this.currentSequence = '';
+
+        // Clear sequence display
+        if (this.sequenceDisplayText) {
+          this.sequenceDisplayText.destroy();
+          this.sequenceDisplayText = undefined;
+        }
+      });
+    }
+
+>>>>>>> Realcodex
     // Spawn checkpoint flag after first letter is collected
     if (!this.firstLetterCollected) {
       this.firstLetterCollected = true;
       this.spawnCheckpointFlag(targetX, landingY);
     }
 
+<<<<<<< HEAD
+=======
+    // HOOK TRAVERSAL - Pull player to node
+>>>>>>> Realcodex
     this.isTraversing = true;
     this.manualControlEnabled = false;
 
@@ -1834,13 +3828,18 @@ export default class GameScene extends Phaser.Scene {
         const progress = tween.progress;
         const baseY = Phaser.Math.Linear(startY, landingY, progress);
         this.player.y = baseY - Math.sin(progress * Math.PI) * 80;
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> Realcodex
         // Particle trail during traversal
         if (progress > 0.1 && progress < 0.9 && Math.random() > 0.7) {
           this.emitTrailParticle(this.player.x, this.player.y);
         }
       },
       onComplete: () => {
+<<<<<<< HEAD
         body.enable = true;
         body.setAllowGravity(true);
         this.player.setPosition(targetX, landingY);
@@ -1857,6 +3856,10 @@ export default class GameScene extends Phaser.Scene {
         
         // Show collected letters
         this.updateCollectedLettersDisplay();
+=======
+        // INSTEAD OF LANDING: Start air suspension (10 seconds)
+        this.startAirSuspension(targetX, nodeY, landingY, letter, letterText);
+>>>>>>> Realcodex
       },
     });
   }
@@ -1968,6 +3971,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private updateCollectedLettersDisplay() {
+<<<<<<< HEAD
     // Show collected letters in UI (you can enhance this display)
     console.log(`Collected letters: ${this.collectedLetters.join(', ')}`);
     
@@ -1986,6 +3990,24 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private collectedLettersText?: Phaser.GameObjects.Text;
+=======
+    // ========== DISABLED: "Collected:" UI removed per design requirements ==========
+    // Only the hook zone hangman-style UI should show word progress
+    // This global "Collected:" display is no longer needed
+
+    console.log(`Collected letters: ${this.collectedLetters.join(', ')}`);
+
+    // Destroy any existing text (cleanup)
+    if (this.collectedLettersText) {
+      this.collectedLettersText.destroy();
+      this.collectedLettersText = undefined;
+    }
+    // DO NOT create new text - the hook zone UI handles word display
+  }
+
+  private collectedLettersText?: Phaser.GameObjects.Text;
+  private sequenceDisplayText?: Phaser.GameObjects.Text;
+>>>>>>> Realcodex
 
   private setupIncompleteWords() {
     // Define incomplete words with missing letters
@@ -2021,18 +4043,34 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private createWordUI() {
+<<<<<<< HEAD
     // Create container for word UI
     this.wordUIContainer = this.add.container(0, 0).setDepth(2000).setScrollFactor(0);
     
     // Create background panel - smaller and cleaner
+=======
+    // ========== GLOBAL SPELLS UI - PERMANENTLY DISABLED ==========
+    // This UI is disabled per design requirements.
+    // Word UI now only appears inside hook-mandatory zones.
+    // The container is created but immediately hidden and never shown.
+
+    this.wordUIContainer = this.add.container(0, 0).setDepth(2000).setScrollFactor(0);
+
+    // Create background panel (hidden)
+>>>>>>> Realcodex
     const panelWidth = 760;
     const panelHeight = 50;
     const panel = this.add.rectangle(400, 25, panelWidth, panelHeight, 0x1a1a2e, 0.85)
       .setStrokeStyle(1, 0x60a5fa);
+<<<<<<< HEAD
     
     this.wordUIContainer.add(panel);
     
     // Add title - smaller and more subtle
+=======
+    this.wordUIContainer.add(panel);
+
+>>>>>>> Realcodex
     const title = this.add.text(40, 10, 'SPELLS:', {
       fontFamily: 'monospace',
       fontSize: '14px',
@@ -2041,9 +4079,17 @@ export default class GameScene extends Phaser.Scene {
       strokeThickness: 1,
     });
     this.wordUIContainer.add(title);
+<<<<<<< HEAD
     
     // Display incomplete words
     this.updateWordUI();
+=======
+
+    // PERMANENTLY HIDE - Global spell UI is disabled
+    // Word tracking now happens only in hook zones
+    this.wordUIContainer.setVisible(false);
+    this.wordUIContainer.setActive(false);
+>>>>>>> Realcodex
   }
 
   private updateWordUI() {
@@ -2333,9 +4379,17 @@ export default class GameScene extends Phaser.Scene {
     this.isTransitioningWords = false;
     this.manualControlEnabled = false;
 
+<<<<<<< HEAD
     // Clear any remaining letters
     this.letters.forEach((letter) => letter.destroy());
     this.letters = [];
+=======
+    // Clear any remaining letters and node circles
+    this.letters.forEach((letter) => letter.destroy());
+    this.letters = [];
+    this.nodeCircles.forEach((circle) => circle.destroy());
+    this.nodeCircles = [];
+>>>>>>> Realcodex
 
     // Big celebration effect
     this.cameras.main.shake(200, 0.008);
@@ -2387,7 +4441,11 @@ export default class GameScene extends Phaser.Scene {
 
   private updateMovingHazards(_: number) {
     this.movingHazards.forEach((hazard) => {
+<<<<<<< HEAD
       const { shape, body, axis, min, max, speed } = hazard;
+=======
+      const { shape, glow, body, axis, min, max, speed } = hazard;
+>>>>>>> Realcodex
       if (axis === 'x') {
         if (shape.x <= min && body.velocity.x < 0) {
           body.setVelocityX(Math.abs(speed));
@@ -2401,6 +4459,13 @@ export default class GameScene extends Phaser.Scene {
           body.setVelocityY(-Math.abs(speed));
         }
       }
+<<<<<<< HEAD
+=======
+
+      if (glow?.active) {
+        glow.setPosition(shape.x, shape.y);
+      }
+>>>>>>> Realcodex
     });
   }
 
@@ -2697,7 +4762,11 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+<<<<<<< HEAD
   private startListening() {
+=======
+  private startListening(force: boolean = false) {
+>>>>>>> Realcodex
     if (!this.speechRecognition) {
       this.showMicrophoneError('Voice recognition not available. Please refresh and allow microphone access.');
       return;
@@ -2708,7 +4777,11 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
 
+<<<<<<< HEAD
     if (this.completedSpellWords.length === 0) {
+=======
+    if (!force && this.completedSpellWords.length === 0) {
+>>>>>>> Realcodex
       console.log('🎤 No spell words learned yet! Find missing letters to complete spells.');
       const noWordsText = this.add.text(
         this.player.x,
@@ -2789,9 +4862,12 @@ export default class GameScene extends Phaser.Scene {
         }
       });
 
+<<<<<<< HEAD
       console.log(`🎤 Listening for spell words: ${this.completedSpellWords.join(', ')}`);
       console.log(`📋 Total completed spells: ${this.completedSpellWords.length}`);
       console.log(`📋 Completed spell words array:`, this.completedSpellWords);
+=======
+>>>>>>> Realcodex
     } catch (error) {
       console.error('🎤 Error starting speech recognition:', error);
       this.showMicrophoneError('Failed to start voice recognition. Try again.');
@@ -2805,7 +4881,11 @@ export default class GameScene extends Phaser.Scene {
     
     // Emit word-spoken event for PronunciationDoor system
     this.events.emit('word-spoken', normalizedSpoken);
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> Realcodex
     // Check if we're waiting for FROST pronunciation after pressing T
     if (this.waitingForFrostPronunciation) {
       if (normalizedSpoken === 'FROST' || normalizedSpoken.includes('FROST')) {
@@ -2850,16 +4930,28 @@ export default class GameScene extends Phaser.Scene {
     }
 
     if (matchedWord) {
+<<<<<<< HEAD
       console.log(`✨ SPELL CAST: "${matchedWord}"! (heard: "${normalizedSpoken}")`);
       console.log(`📋 Available spells: ${this.completedSpellWords.join(', ')}`);
       // Reset pronunciation mistakes on success
       this.pronunciationMistakes = 0;
+=======
+      // Reset pronunciation mistakes on success
+      this.pronunciationMistakes = 0;
+      // Track successful pronunciation in analytics
+      trackPronunciationAttempt(true);
+>>>>>>> Realcodex
       // Mark that player is attempting spells (for death tracking)
       this.diedDuringSpell = true;
       this.castSpell(matchedWord);
     } else {
+<<<<<<< HEAD
       console.log(`❌ "${normalizedSpoken}" is not a known spell word.`);
       console.log(`📋 Available spells: ${this.completedSpellWords.join(', ')}`);
+=======
+      // Track failed pronunciation in analytics
+      trackPronunciationAttempt(false);
+>>>>>>> Realcodex
       // Track failed spell attempt
       this.lastFailedSpell = normalizedSpoken;
       this.showSpellFailure();
@@ -2945,6 +5037,10 @@ export default class GameScene extends Phaser.Scene {
 
     // Special handling for BLAZE - launch flare stun
     if (spellWord === 'BLAZE') {
+<<<<<<< HEAD
+=======
+      this.destroySnowDemonsFromSpeechBlaze();
+>>>>>>> Realcodex
       this.launchFlareStun();
       return;
     }
@@ -3700,6 +5796,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private showPronunciationSuccess(word: string) {
+<<<<<<< HEAD
+=======
+    // Track successful pronunciation in analytics
+    trackPronunciationAttempt(true);
+    trackPronunciationWordResult(word, true);
+>>>>>>> Realcodex
     const successText = this.add.text(
       this.player.x,
       this.player.y - 80,
@@ -3724,6 +5826,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   private showPronunciationError(heard: string, target: string) {
+<<<<<<< HEAD
+=======
+    // Track failed pronunciation in analytics
+    trackPronunciationAttempt(false);
+    trackPronunciationWordResult(target, false);
+>>>>>>> Realcodex
     // Track pronunciation failure
     this.pronunciationMistakes++;
     this.lastFailedSpell = target;
@@ -4186,6 +6294,12 @@ export default class GameScene extends Phaser.Scene {
 
 
   update(_: number, delta: number) {
+<<<<<<< HEAD
+=======
+    // Pause guard for end-of-level overlay
+    if ((window as any).__GAME_PAUSED__) return;
+
+>>>>>>> Realcodex
     this.updateMovingHazards(delta);
     this.updateEnemies();
     this.updateDemons();
@@ -4193,20 +6307,43 @@ export default class GameScene extends Phaser.Scene {
     // Update Jumuf following
     this.updateJumufFollow();
 
+<<<<<<< HEAD
+=======
+    // Check if player is in a hook zone and update UI accordingly
+    this.checkHookZoneStatus();
+
+    // Check for P key to release hook and drop from suspension
+    if (this.isSuspended && this.releaseHookKey && Phaser.Input.Keyboard.JustDown(this.releaseHookKey)) {
+      console.log('🔓 P key pressed - releasing hook and dropping player');
+      this.endAirSuspension();
+    }
+
+>>>>>>> Realcodex
     // Update hint bubble position if active
     if (this.jumufHintBubble && this.jumuf) {
       this.jumufHintBubble.setPosition(this.jumuf.x, this.jumuf.y - 60);
     }
 
+<<<<<<< HEAD
+=======
+    // Check if Djinn should give hook guidance
+    this.checkForHookGuidanceNeeded();
+
+>>>>>>> Realcodex
     // Update PronunciationDoor
     if (this.pronunciationDoor) {
       this.pronunciationDoor.update();
     }
 
     // Handle game over review Enter key
+<<<<<<< HEAD
     if (this.gameOverReviewActive) {
       const enterKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
       if (Phaser.Input.Keyboard.JustDown(enterKey)) {
+=======
+    if (this.gameOverReviewActive && this.gameOverReviewEnterKey) {
+      if (Phaser.Input.Keyboard.JustDown(this.gameOverReviewEnterKey)) {
+>>>>>>> Realcodex
         // Clean up review panel
         if (this.gameOverReviewPanel) {
           this.gameOverReviewPanel.panelBg.destroy();
@@ -4241,14 +6378,31 @@ export default class GameScene extends Phaser.Scene {
     }
 
     const body = this.player.body as Phaser.Physics.Arcade.Body;
+<<<<<<< HEAD
     const left = this.cursors.left?.isDown ?? false;
     const right = this.cursors.right?.isDown ?? false;
     const jumpJustPressed = Phaser.Input.Keyboard.JustDown(this.jumpKey!);
     const jumpHeld = this.jumpKey?.isDown ?? false;
+=======
+    const left = (this.cursors.left?.isDown ?? false) || (this.wasdKeys?.left.isDown ?? false);
+    const right = (this.cursors.right?.isDown ?? false) || (this.wasdKeys?.right.isDown ?? false);
+    const jumpJustPressed =
+      Phaser.Input.Keyboard.JustDown(this.jumpKey!) ||
+      (this.cursors.up ? Phaser.Input.Keyboard.JustDown(this.cursors.up) : false) ||
+      (this.wasdKeys?.up ? Phaser.Input.Keyboard.JustDown(this.wasdKeys.up) : false);
+    const jumpHeld =
+      (this.jumpKey?.isDown ?? false) ||
+      (this.cursors.up?.isDown ?? false) ||
+      (this.wasdKeys?.up.isDown ?? false);
+>>>>>>> Realcodex
     const attackPressed = Phaser.Input.Keyboard.JustDown(this.attackKey!);
     const voicePressed = Phaser.Input.Keyboard.JustDown(this.voiceKey!);
     const doorPressed = Phaser.Input.Keyboard.JustDown(this.doorKey!);
     const onGround = body.blocked.down;
+<<<<<<< HEAD
+=======
+    const movementMultiplier = this.playerSlowMovementMultiplier;
+>>>>>>> Realcodex
 
     // Handle attack input
     if (attackPressed) {
@@ -4265,7 +6419,11 @@ export default class GameScene extends Phaser.Scene {
           this.pronunciationDoor.x,
           this.pronunciationDoor.y
         );
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> Realcodex
         // If within 300 pixels of door, start door listening
         if (distanceToDoor < 300) {
           this.pronunciationDoor.startListening();
@@ -4276,6 +6434,14 @@ export default class GameScene extends Phaser.Scene {
 
     // Handle voice input
     if (voicePressed) {
+<<<<<<< HEAD
+=======
+      if (this.pronunciationDoor?.isChallengeRunning()) {
+        this.startListening();
+        return;
+      }
+
+>>>>>>> Realcodex
       // Check if HUNGRY traversal is complete but not yet unlocked
       if (this.completedWords.includes('HUNGRY') && !this.hungryUnlocked && !this.completedSpellWords.includes('HUNGRY')) {
         this.handleHungryPronunciationCheck();
@@ -4285,11 +6451,19 @@ export default class GameScene extends Phaser.Scene {
     }
 
     if (left) {
+<<<<<<< HEAD
       body.setAccelerationX(-PLAYER_ACCELERATION);
       body.setDragX(0);
       this.player.setFlipX(true); // Face left
     } else if (right) {
       body.setAccelerationX(PLAYER_ACCELERATION);
+=======
+      body.setAccelerationX(-PLAYER_ACCELERATION * movementMultiplier);
+      body.setDragX(0);
+      this.player.setFlipX(true); // Face left
+    } else if (right) {
+      body.setAccelerationX(PLAYER_ACCELERATION * movementMultiplier);
+>>>>>>> Realcodex
       body.setDragX(0);
       this.player.setFlipX(false); // Face right
     } else {
@@ -4297,7 +6471,11 @@ export default class GameScene extends Phaser.Scene {
       body.setDragX(PLAYER_DRAG);
     }
 
+<<<<<<< HEAD
     body.setMaxVelocity(PLAYER_MAX_VELOCITY_X, 800);
+=======
+    body.setMaxVelocity(PLAYER_MAX_VELOCITY_X * movementMultiplier, 800);
+>>>>>>> Realcodex
 
     if (onGround) {
       this.coyoteTimer = COYOTE_TIME;
@@ -4347,6 +6525,505 @@ export default class GameScene extends Phaser.Scene {
     };
   }
 
+<<<<<<< HEAD
+=======
+  // ========== HOOK ZONE UI SYSTEM ==========
+  // Checks if player is in a hook zone and manages the zone-specific UI
+
+  private checkHookZoneStatus() {
+    const playerX = this.player.x;
+    let inZone = false;
+    let zoneIndex = -1;
+
+    // Check if player is in any hook zone
+    for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+      const zone = this.hookZoneDefinitions[i];
+      if (playerX >= zone.start && playerX <= zone.end) {
+        inZone = true;
+        zoneIndex = i;
+        break;
+      }
+    }
+
+    // Player entered a hook zone
+    if (inZone && !this.isInHookZone) {
+      this.enterHookZone(zoneIndex);
+    }
+    // Player trying to exit a hook zone
+    else if (!inZone && this.isInHookZone) {
+      // ========== ZONE EXIT BLOCKING ==========
+      // Player cannot exit until word is complete
+      if (this.currentHookZoneIndex >= 0 && !this.hookZoneSolved[this.currentHookZoneIndex]) {
+        // Block exit - push player back into zone
+        this.blockZoneExit();
+      } else {
+        // Zone complete or already solved - allow exit
+        this.exitHookZone();
+      }
+    }
+  }
+
+  /**
+   * Block player from exiting an incomplete hook zone
+   * Pushes player back to zone boundary
+   */
+  private blockZoneExit() {
+    if (this.currentHookZoneIndex < 0) return;
+    if (!this.hookZoneDefinitions[this.currentHookZoneIndex]) return;
+
+    const zone = this.hookZoneDefinitions[this.currentHookZoneIndex];
+    const playerX = this.player.x;
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+
+    if (!body) return; // Safety check
+
+    // Determine which boundary the player tried to cross
+    if (playerX < zone.start) {
+      // Tried to exit left - push back to left boundary
+      this.player.x = zone.start + 20;
+      body.setVelocityX(50); // Small push inward
+    } else if (playerX > zone.end) {
+      // Tried to exit right - push back to right boundary
+      this.player.x = zone.end - 20;
+      body.setVelocityX(-50); // Small push inward
+    }
+
+    // Show warning feedback (only once per attempt)
+    if (!this.hookZoneExitBlocked) {
+      this.hookZoneExitBlocked = true;
+      this.showZoneExitBlockedFeedback();
+
+      // Reset flag after delay
+      this.time.delayedCall(1000, () => {
+        this.hookZoneExitBlocked = false;
+      });
+    }
+  }
+
+  /**
+   * Show feedback when player tries to exit incomplete zone
+   */
+  private showZoneExitBlockedFeedback() {
+    const word = this.hookZoneTargetWord || '';
+    const slotState = this.hookZoneSlotState || [];
+    const filled = slotState.filter(s => s).length;
+    const total = word.length || 0;
+
+    // Safety check - don't show feedback if no word data
+    if (total === 0) {
+      console.warn('showZoneExitBlockedFeedback called with no target word');
+      return;
+    }
+
+    // Create warning text
+    const warningText = this.add.text(
+      this.player.x,
+      this.player.y - 70,
+      `🚫 Complete the spell first!\n${filled}/${total} letters`,
+      {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '14px',
+        color: '#ff6666',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'center',
+      }
+    );
+    warningText.setOrigin(0.5);
+    warningText.setDepth(2000);
+
+    // Fade out and destroy
+    this.tweens.add({
+      targets: warningText,
+      alpha: 0,
+      y: warningText.y - 30,
+      duration: 1500,
+      onComplete: () => warningText.destroy(),
+    });
+
+    // Flash the zone boundary
+    this.flashZoneBoundary();
+  }
+
+  /**
+   * Flash the zone boundary to indicate blocked exit
+   */
+  private flashZoneBoundary() {
+    if (this.currentHookZoneIndex < 0) return;
+    if (!this.hookZoneDefinitions[this.currentHookZoneIndex]) return;
+    if (!this.map) return; // Safety check
+
+    const zone = this.hookZoneDefinitions[this.currentHookZoneIndex];
+    const groundY = this.map.heightInPixels - 16;
+
+    // Create flash rectangles at boundaries
+    const flashLeft = this.add.rectangle(zone.start, groundY - 200, 10, 400, 0xff0000, 0.8);
+    const flashRight = this.add.rectangle(zone.end, groundY - 200, 10, 400, 0xff0000, 0.8);
+    flashLeft.setDepth(1999);
+    flashRight.setDepth(1999);
+
+    // Flash animation
+    this.tweens.add({
+      targets: [flashLeft, flashRight],
+      alpha: 0,
+      duration: 500,
+      yoyo: true,
+      repeat: 1,
+      onComplete: () => {
+        flashLeft.destroy();
+        flashRight.destroy();
+      },
+    });
+  }
+
+  private enterHookZone(zoneIndex: number) {
+    this.isInHookZone = true;
+    this.currentHookZoneIndex = zoneIndex;
+    const zone = this.hookZoneDefinitions[zoneIndex];
+    this.hookZoneTargetWord = zone.word;
+    const zoneRespawn = this.getHookZoneRespawnPoint(zoneIndex);
+    if (zoneRespawn) {
+      this.hookZoneEntryRespawnPoint = { zoneIndex, x: zoneRespawn.x, y: zoneRespawn.y };
+    }
+
+    // Check if this zone was already solved
+    const alreadySolved = this.hookZoneSolved[zoneIndex];
+
+    if (alreadySolved) {
+      // Zone already completed - show minimal UI, allow free passage
+      // Set slots as all filled
+      this.hookZoneCollectedLetters = zone.word.split('');
+      this.hookZoneSlotState = new Array(zone.word.length).fill(true);
+      this.hookZoneFilledLetters = zone.word.split('');
+      this.hookZoneExitBlocked = false;
+
+      // Create UI showing completed word
+      this.createHookZoneUI();
+      return;
+    }
+
+    // Initialize slot-based state (UNIVERSAL - works for any word length)
+    this.hookZoneCollectedLetters = [];
+    this.hookZoneSlotState = new Array(zone.word.length).fill(false);
+    this.hookZoneFilledLetters = new Array(zone.word.length).fill('');
+    this.hookZoneExitBlocked = false;
+
+    // Check if first letter was pre-collected from outside the zone
+    if (this.hookZoneFirstLetterPreCollected[zoneIndex]) {
+      this.hookZoneSlotState[0] = true;
+      this.hookZoneFilledLetters[0] = zone.word[0];
+      this.hookZoneCollectedLetters.push(zone.word[0]);
+      this.hookZoneFirstLetterPreCollected[zoneIndex] = false;
+    }
+
+    // Hide the global SPELLS UI
+    if (this.wordUIContainer) {
+      this.wordUIContainer.setVisible(false);
+    }
+
+    // Create the hangman-style UI for this zone
+    this.createHookZoneUI();
+
+    // Give Djinn hint if not already given for this zone
+    if (!this.hookZoneHintGiven[zoneIndex]) {
+      this.hookZoneHintGiven[zoneIndex] = true;
+      // Delay hint slightly so player sees the zone first
+      this.time.delayedCall(500, () => {
+        this.jumufGiveHint(zone.hint);
+      });
+    }
+
+    // Start 15-second timer - if word isn't solved, flash nodes purple and track failure
+    if (this.hookZoneWordTimer) {
+      this.hookZoneWordTimer.remove();
+    }
+    this.hookZoneWordTimer = this.time.delayedCall(15000, () => {
+      // Only fire if still in this zone and it's not solved
+      if (this.isInHookZone && this.currentHookZoneIndex === zoneIndex && !this.hookZoneSolved[zoneIndex]) {
+        trackWordFailure(zone.word);
+        trackWordTimeout(zone.word);
+
+        // Flash all letter nodes in this zone purple
+        this.letters.forEach((letterText) => {
+          const nodeIndex = letterText.getData('index') as number;
+          if (nodeIndex !== undefined && Math.floor(nodeIndex / 10) === zoneIndex) {
+            const nodeCircle = letterText.getData('nodeCircle') as Phaser.GameObjects.Arc | undefined;
+            if (nodeCircle && letterText.active) {
+              // Flash purple
+              this.tweens.add({
+                targets: nodeCircle,
+                fillColor: { from: 0x9333ea, to: nodeCircle.fillColor },
+                duration: 400,
+                yoyo: true,
+                repeat: 3,
+                ease: 'Sine.easeInOut',
+              });
+              this.tweens.add({
+                targets: letterText,
+                alpha: 0.5,
+                duration: 400,
+                yoyo: true,
+                repeat: 3,
+                ease: 'Sine.easeInOut',
+              });
+            }
+          }
+        });
+      }
+    });
+  }
+
+  private exitHookZone() {
+    this.isInHookZone = false;
+    this.currentHookZoneIndex = -1;
+    this.hookZoneTargetWord = '';
+    this.hookZoneEntryRespawnPoint = undefined;
+
+    // Cancel 15s word timer
+    if (this.hookZoneWordTimer) {
+      this.hookZoneWordTimer.remove();
+      this.hookZoneWordTimer = undefined;
+    }
+
+    // Reset slot-based state for this zone only
+    this.hookZoneCollectedLetters = [];
+    this.hookZoneSlotState = [];
+    this.hookZoneFilledLetters = [];
+    this.hookZoneExitBlocked = false;
+
+    // Destroy the hook zone UI
+    if (this.hookZoneUI) {
+      this.hookZoneUI.destroy();
+      this.hookZoneUI = undefined;
+    }
+
+    // NOTE: Global SPELLS UI stays hidden - it's permanently disabled
+    // No word UI outside of hook zones per design requirements
+
+  }
+
+  private createHookZoneUI() {
+    // Destroy existing UI if any
+    if (this.hookZoneUI) {
+      this.hookZoneUI.destroy();
+    }
+
+    // Create container for hook zone UI (fixed to camera)
+    this.hookZoneUI = this.add.container(0, 0).setDepth(2000).setScrollFactor(0);
+
+    // Background panel - centered at top
+    const panelWidth = 200;
+    const panelHeight = 60;
+    const panel = this.add.rectangle(400, 40, panelWidth, panelHeight, 0x2d1b4e, 0.9)
+      .setStrokeStyle(2, 0xff6666);
+    this.hookZoneUI.add(panel);
+
+    // "SPELL:" label
+    const label = this.add.text(400, 20, 'SPELL:', {
+      fontFamily: 'monospace',
+      fontSize: '12px',
+      color: '#ff6666',
+    }).setOrigin(0.5);
+    this.hookZoneUI.add(label);
+
+    // Update the hangman display
+    this.updateHookZoneUI();
+  }
+
+  private updateHookZoneUI() {
+    if (!this.hookZoneUI || !this.hookZoneTargetWord) return;
+
+    // Remove old hangman text if exists (index 2+)
+    const children = this.hookZoneUI.list.slice();
+    children.forEach((child, index) => {
+      if (index >= 2) {
+        this.hookZoneUI!.remove(child);
+        child.destroy();
+      }
+    });
+
+    const targetWord = this.hookZoneTargetWord;
+    const zoneIndex = this.currentHookZoneIndex;
+
+    // Ensure slot state is properly sized
+    if (this.hookZoneSlotState.length !== targetWord.length) {
+      this.hookZoneSlotState = new Array(targetWord.length).fill(false);
+    }
+
+    // Check if all slots are filled AND all letters are correct
+    const allSlotsFilled = this.hookZoneSlotState.length === targetWord.length &&
+                           this.hookZoneSlotState.every(filled => filled);
+    const allLettersCorrect = allSlotsFilled &&
+                              this.hookZoneFilledLetters.every((letter, i) => letter === targetWord[i]);
+    const isComplete = allLettersCorrect || (zoneIndex >= 0 && this.hookZoneSolved[zoneIndex]);
+    const hasWrongLetter = allSlotsFilled && !allLettersCorrect && !(zoneIndex >= 0 && this.hookZoneSolved[zoneIndex]);
+
+    // Create hangman-style display showing actual filled letters (including wrong ones)
+    let displayText = '';
+    for (let i = 0; i < targetWord.length; i++) {
+      if (this.hookZoneSlotState[i]) {
+        displayText += this.hookZoneFilledLetters[i] + ' ';  // Show actual letter placed
+      } else {
+        displayText += '_ ';  // Slot empty - show blank
+      }
+    }
+
+    const hangmanText = this.add.text(400, 48, displayText.trim(), {
+      fontFamily: 'monospace',
+      fontSize: '24px',
+      color: isComplete ? '#22c55e' : hasWrongLetter ? '#ef4444' : '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 2,
+    }).setOrigin(0.5);
+    this.hookZoneUI.add(hangmanText);
+
+    // Show progress indicator
+    const filledCount = this.hookZoneSlotState.filter(s => s).length;
+    let progressLabel = `${filledCount}/${targetWord.length}`;
+    let progressColor = '#aaaaaa';
+    if (isComplete) {
+      progressLabel = '✓ COMPLETE - EXIT UNLOCKED';
+      progressColor = '#22c55e';
+    } else if (hasWrongLetter) {
+      progressLabel = '✗ WRONG LETTERS - STUCK!';
+      progressColor = '#ef4444';
+    }
+    const progressText = this.add.text(400, 68, progressLabel, {
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      color: progressColor,
+    }).setOrigin(0.5);
+    this.hookZoneUI.add(progressText);
+  }
+
+  // Called when a letter is collected in a hook zone (legacy - kept for compatibility)
+  public onHookZoneLetterCollected(letter: string) {
+    // Now handled by collectHookZoneLetter - this is kept for any external calls
+    if (!this.isInHookZone) return;
+    // Delegate to the new universal method
+    this.collectHookZoneLetter(letter);
+  }
+
+  /**
+   * UNIVERSAL Hook Zone Letter Collection
+   * Word-agnostic: works for ANY word (BLAZE, FROST, STORM, etc.)
+   * Slot-based: tracks which positions are filled, handles any click order
+   */
+  private collectHookZoneLetter(letter: string) {
+    if (!this.isInHookZone || this.currentHookZoneIndex < 0) return;
+    if (!this.hookZoneTargetWord) return;
+
+    const targetWord = this.hookZoneTargetWord;
+    // Initialize slot state if needed
+    if (this.hookZoneSlotState.length !== targetWord.length) {
+      this.hookZoneSlotState = new Array(targetWord.length).fill(false);
+      this.hookZoneFilledLetters = new Array(targetWord.length).fill('');
+    }
+
+    // Find the FIRST position where this letter appears in the target word (left-to-right)
+    // (handles duplicate letters like "FREEZE" with two E's)
+    let letterUsed = false;
+    let slotFilled = -1;
+    for (let i = 0; i < targetWord.length; i++) {
+      if (targetWord[i] === letter && !this.hookZoneSlotState[i]) {
+        // Fill this slot
+        this.hookZoneSlotState[i] = true;
+        this.hookZoneFilledLetters[i] = letter;
+        letterUsed = true;
+        slotFilled = i;
+        break; // Only fill one slot per click (for duplicate letters)
+      }
+    }
+
+    // If letter didn't match any slot (fake/distraction letter), fill the next empty slot with the wrong letter
+    if (!letterUsed) {
+      for (let i = 0; i < targetWord.length; i++) {
+        if (!this.hookZoneSlotState[i]) {
+          this.hookZoneSlotState[i] = true;
+          this.hookZoneFilledLetters[i] = letter; // Wrong letter in slot
+          letterUsed = true;
+          slotFilled = i;
+          break;
+        }
+      }
+    }
+
+    // Track collected letter (for tracking which letters have been used)
+    if (letterUsed) {
+      this.hookZoneCollectedLetters.push(letter);
+    }
+
+    // Update the hangman UI
+    this.updateHookZoneUI();
+
+    // Check for word completion
+    this.checkHookZoneCompletion();
+  }
+
+  /**
+   * Check if the current hook zone word is complete
+   * Triggers completion effects and marks zone as solved
+   */
+  private checkHookZoneCompletion() {
+    if (!this.isInHookZone || this.currentHookZoneIndex < 0) return;
+    if (this.hookZoneSolved[this.currentHookZoneIndex]) return; // Already solved
+
+    const targetWord = this.hookZoneTargetWord;
+
+    // Safety check - need a valid word to check completion
+    if (!targetWord || targetWord.length === 0) return;
+
+    // Check if all slots are filled
+    const allSlotsFilled = this.hookZoneSlotState.length === targetWord.length &&
+                           this.hookZoneSlotState.every(filled => filled);
+
+    if (!allSlotsFilled) return;
+
+    // Verify all filled letters match the target word (catches fake/wrong letters)
+    const allLettersCorrect = this.hookZoneFilledLetters.every((letter, i) => letter === targetWord[i]);
+
+    if (!allLettersCorrect) {
+      // Slots are full but letters are wrong - player is stuck
+      trackWordFailure(targetWord);
+      return;
+    }
+
+    {
+      // Cancel the 15s word timer since word was solved
+      if (this.hookZoneWordTimer) {
+        this.hookZoneWordTimer.remove();
+        this.hookZoneWordTimer = undefined;
+      }
+
+      // Track successful word attempt
+      trackWordAttempt(targetWord);
+
+      // Mark zone as solved
+      this.hookZoneSolved[this.currentHookZoneIndex] = true;
+
+      // Add to completed spell words if it's a spell
+      if (this.isSpellWord(targetWord) && !this.completedSpellWords.includes(targetWord)) {
+        this.completedSpellWords.push(targetWord);
+      }
+
+      // Show completion feedback
+      this.time.delayedCall(300, () => {
+        this.jumufGiveHint(`"${targetWord}" complete! You've mastered this zone!`);
+
+        // Celebration particles
+        for (let i = 0; i < 15; i++) {
+          this.time.delayedCall(i * 40, () => {
+            this.emitSpark(
+              this.player.x + Phaser.Math.Between(-50, 50),
+              this.player.y + Phaser.Math.Between(-50, 50)
+            );
+          });
+        }
+      });
+    }
+  }
+
+>>>>>>> Realcodex
   private updateCombat(delta: number) {
     // Update cooldowns
     Object.keys(this.combatCooldowns).forEach(key => {
@@ -4379,11 +7056,21 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
+<<<<<<< HEAD
+=======
+    // Spawn spell-gated enemies once BLAZE is unlocked
+    this.ensureSpellGatedEnemySpawns();
+
+>>>>>>> Realcodex
     // Update enemies
     this.updateEnemyAI();
 
     // Update projectiles
     this.updateProjectiles();
+<<<<<<< HEAD
+=======
+    this.updateSnowballs();
+>>>>>>> Realcodex
 
     // Check enemy collision with player
     this.checkEnemyPlayerCollision();
@@ -4582,7 +7269,11 @@ export default class GameScene extends Phaser.Scene {
       if (!enemy.isDead) {
         const distance = Phaser.Math.Distance.Between(slashX, slashY, enemy.sprite.x, enemy.sprite.y);
         if (distance < 80) {
+<<<<<<< HEAD
           this.damageEnemy(enemy, 2); // Double damage during barrage
+=======
+          this.damageEnemy(enemy, 2, 'SWORD'); // Double damage during barrage
+>>>>>>> Realcodex
         }
       }
     });
@@ -4661,7 +7352,11 @@ export default class GameScene extends Phaser.Scene {
       if (!enemy.isDead) {
         const distance = Phaser.Math.Distance.Between(slashX, slashY, enemy.sprite.x, enemy.sprite.y);
         if (distance < 60) {
+<<<<<<< HEAD
           this.damageEnemy(enemy, 1);
+=======
+          this.damageEnemy(enemy, 1, 'SWORD');
+>>>>>>> Realcodex
         }
       }
     });
@@ -4924,6 +7619,14 @@ export default class GameScene extends Phaser.Scene {
       if (!enemy.isDead && !enemy.sprite.getData('isFrozen')) {
         const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.sprite.x, enemy.sprite.y);
         if (distance <= 400) {
+<<<<<<< HEAD
+=======
+          if (enemy.enemyType === 'fire') {
+            this.freezeFireDemon(enemy, 10000);
+            return;
+          }
+
+>>>>>>> Realcodex
           // Store original properties
           const originalSpeed = enemy.speed || 1;
           
@@ -5050,6 +7753,14 @@ export default class GameScene extends Phaser.Scene {
       if (!enemy.isDead && !enemy.sprite.getData('isFrozen')) {
         const distance = Phaser.Math.Distance.Between(playerX, playerY, enemy.sprite.x, enemy.sprite.y);
         if (distance <= 1500) {
+<<<<<<< HEAD
+=======
+          if (enemy.enemyType === 'fire') {
+            this.freezeFireDemon(enemy, 15000);
+            return;
+          }
+
+>>>>>>> Realcodex
           // Store original properties
           const originalSpeed = enemy.speed || 1;
           
@@ -5211,6 +7922,14 @@ export default class GameScene extends Phaser.Scene {
     // Freeze ALL enemies (no distance check)
     this.enemies.forEach(enemy => {
       if (!enemy.isDead && !enemy.sprite.getData('isFrozen')) {
+<<<<<<< HEAD
+=======
+        if (enemy.enemyType === 'fire') {
+          this.freezeFireDemon(enemy, 15000);
+          return;
+        }
+
+>>>>>>> Realcodex
         // Store original properties
         const originalSpeed = enemy.speed || 1;
         
@@ -6385,8 +9104,12 @@ export default class GameScene extends Phaser.Scene {
       // Find and destroy the enemy
       const enemy = this.enemies.find(e => e.sprite === enemySprite);
       if (enemy && !enemy.isDead) {
+<<<<<<< HEAD
         enemy.isDead = true;
         enemy.sprite.destroy();
+=======
+        this.killEnemy(enemy, 'HUNGRY');
+>>>>>>> Realcodex
         console.log('🐍 Snake destroyed enemy!');
       }
     });
@@ -6418,6 +9141,7 @@ export default class GameScene extends Phaser.Scene {
   // ENEMY SYSTEM
   // ===========================
 
+<<<<<<< HEAD
   private spawnEnemies() {
     const bandY = this.spawnPoint.y;
     
@@ -6445,6 +9169,147 @@ export default class GameScene extends Phaser.Scene {
   private createEnemy(x: number, y: number, patrolWidth: number) {
     // Create enemy texture if it doesn't exist
     if (!this.textures.exists('enemy')) {
+=======
+  private isInsideAnyHookZone(x: number): boolean {
+    return this.hookZoneDefinitions.some((zone) => x >= zone.start && x <= zone.end);
+  }
+
+  private getHookZoneContainingX(x: number): { start: number; end: number } | undefined {
+    return this.hookZoneDefinitions.find((zone) => x >= zone.start && x <= zone.end);
+  }
+
+  private isPathCrossingHookZone(startX: number, endX: number): boolean {
+    const minX = Math.min(startX, endX);
+    const maxX = Math.max(startX, endX);
+    return this.hookZoneDefinitions.some((zone) => maxX >= zone.start && minX <= zone.end);
+  }
+
+  private enforceEnemyHookZoneBoundary(enemy: any): boolean {
+    const zone = this.getHookZoneContainingX(enemy.sprite.x);
+    if (!zone) return false;
+
+    const distToStart = Math.abs(enemy.sprite.x - zone.start);
+    const distToEnd = Math.abs(zone.end - enemy.sprite.x);
+    if (distToStart < distToEnd) {
+      enemy.sprite.x = zone.start - 12;
+      enemy.body.setVelocityX(-Math.abs(enemy.speed || 50));
+    } else {
+      enemy.sprite.x = zone.end + 12;
+      enemy.body.setVelocityX(Math.abs(enemy.speed || 50));
+    }
+    return true;
+  }
+
+  private ensureSpellGatedEnemySpawns() {
+    if (!this.playerHasBlazeSpell && this.completedSpellWords.includes('BLAZE')) {
+      this.playerHasBlazeSpell = true;
+    }
+    if (!this.playerHasFrostSpell && this.completedSpellWords.includes('FROST')) {
+      this.playerHasFrostSpell = true;
+    }
+
+    if (this.playerHasBlazeSpell && !this.snowDemonsSpawned) {
+      this.spawnSnowDemonsAfterBlazeUnlock();
+    }
+    if (this.playerHasFrostSpell && !this.fireDemonsSpawned) {
+      this.spawnFireDemonsAfterFrostUnlock();
+    }
+  }
+
+  private spawnEnemies() {
+    // Basic red cube enemies are intentionally disabled.
+    // Red demons are handled by buildDemons(), and spell-gated snow demons spawn after BLAZE unlock.
+  }
+
+  private getEnemySurfaceSpawnY(x: number, preferredY: number, spriteHeight: number): number {
+    const desiredFeetY = preferredY + spriteHeight / 2;
+    let chosenTopY: number | undefined;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    this.physics.world.staticBodies.entries.forEach((entry) => {
+      const staticBody = entry as Phaser.Physics.Arcade.StaticBody;
+      const gameObject = staticBody.gameObject as any;
+      if (!gameObject || !gameObject.getData || !gameObject.getData('isPlatform')) return;
+
+      const left = staticBody.x;
+      const right = staticBody.x + staticBody.width;
+      if (x < left - 8 || x > right + 8) return;
+
+      const topY = staticBody.y;
+      const distance = Math.abs(topY - desiredFeetY);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        chosenTopY = topY;
+      }
+    });
+
+    const groundTopY = (this.map.heightInPixels - 16) - 20;
+    const topY = chosenTopY ?? groundTopY;
+    return topY - spriteHeight / 2;
+  }
+
+  private setupEnemyPlatformCollision(enemySprite: Phaser.GameObjects.Image) {
+    this.physics.world.staticBodies.entries.forEach((entry) => {
+      const staticBody = entry as Phaser.Physics.Arcade.StaticBody;
+      const gameObject = staticBody.gameObject as any;
+      if (gameObject && gameObject.getData && gameObject.getData('isPlatform')) {
+        this.physics.add.collider(enemySprite, gameObject);
+      }
+    });
+  }
+
+  private spawnSnowDemonsAfterBlazeUnlock() {
+    if (this.snowDemonsSpawned) return;
+
+    const bandY = this.spawnPoint.y;
+    const snowDemonSpawns = [
+      { x: 1700, y: bandY - 100, patrolWidth: 140 },
+      { x: 4300, y: bandY - 100, patrolWidth: 140 },
+      { x: 7700, y: bandY - 100, patrolWidth: 160 },
+    ];
+
+    snowDemonSpawns.forEach((spawn) => {
+      if (!this.isInsideAnyHookZone(spawn.x)) {
+        this.createEnemy(spawn.x, spawn.y, spawn.patrolWidth, 'snow');
+      }
+    });
+
+    this.snowDemonsSpawned = true;
+    console.log('❄️ Snow Demons unlocked and spawned.');
+  }
+
+  private spawnFireDemonsAfterFrostUnlock() {
+    if (this.fireDemonsSpawned) return;
+
+    const bandY = this.spawnPoint.y;
+    // Spawn only after the FROST hook-zone section of the level.
+    const fireDemonSpawns = [
+      { x: 4300, y: bandY - 100, patrolWidth: 140 },
+      { x: 5700, y: bandY - 100, patrolWidth: 150 },
+      { x: 7600, y: bandY - 100, patrolWidth: 170 },
+    ];
+
+    fireDemonSpawns.forEach((spawn) => {
+      if (!this.isInsideAnyHookZone(spawn.x)) {
+        this.createEnemy(spawn.x, spawn.y, spawn.patrolWidth, 'fire');
+      }
+    });
+
+    this.fireDemonsSpawned = true;
+    console.log('🔥 Fire Demons unlocked and spawned.');
+  }
+
+  private createEnemy(
+    x: number,
+    y: number,
+    patrolWidth: number,
+    enemyType: 'basic' | 'snow' | 'fire' = 'basic'
+  ) {
+    if (this.isInsideAnyHookZone(x)) return;
+
+    // Create basic enemy texture if it doesn't exist
+    if (enemyType === 'basic' && !this.textures.exists('enemy')) {
+>>>>>>> Realcodex
       const g = this.add.graphics();
       g.fillStyle(0xff4444, 1);
       g.fillRect(0, 0, 20, 20);
@@ -6452,12 +9317,64 @@ export default class GameScene extends Phaser.Scene {
       g.destroy();
     }
 
+<<<<<<< HEAD
     const enemy = this.add.image(x, y, 'enemy')
+=======
+    // Create snow demon texture if it doesn't exist
+    if (enemyType === 'snow' && !this.textures.exists('snow_demon')) {
+      const g = this.add.graphics();
+      g.fillStyle(0x2563eb, 1);
+      g.fillRect(2, 8, 20, 14);
+      g.fillStyle(0x1d4ed8, 1);
+      g.fillRect(4, 2, 16, 10);
+      g.fillStyle(0x93c5fd, 1);
+      g.fillRect(5, 3, 2, 2);
+      g.fillRect(17, 3, 2, 2);
+      g.fillStyle(0xffffff, 1);
+      g.fillRect(8, 6, 8, 2);
+      g.fillStyle(0x0f172a, 1);
+      g.fillRect(7, 5, 2, 2);
+      g.fillRect(15, 5, 2, 2);
+      g.fillStyle(0x60a5fa, 1);
+      g.fillRect(0, 10, 2, 8);
+      g.fillRect(22, 10, 2, 8);
+      g.generateTexture('snow_demon', 24, 24);
+      g.destroy();
+    }
+
+    if (enemyType === 'fire' && !this.textures.exists('fire_demon')) {
+      const g = this.add.graphics();
+      g.fillStyle(0xf97316, 1);
+      g.fillRect(2, 8, 20, 14);
+      g.fillStyle(0xea580c, 1);
+      g.fillRect(4, 2, 16, 10);
+      g.fillStyle(0xfbbf24, 1);
+      g.fillRect(5, 3, 2, 2);
+      g.fillRect(17, 3, 2, 2);
+      g.fillStyle(0x7c2d12, 1);
+      g.fillRect(7, 5, 2, 2);
+      g.fillRect(15, 5, 2, 2);
+      g.fillStyle(0xdc2626, 1);
+      g.fillRect(0, 10, 2, 8);
+      g.fillRect(22, 10, 2, 8);
+      g.generateTexture('fire_demon', 24, 24);
+      g.destroy();
+    }
+
+    const textureKey =
+      enemyType === 'snow'
+        ? 'snow_demon'
+        : enemyType === 'fire'
+          ? 'fire_demon'
+          : 'enemy';
+    const enemy = this.add.image(x, y, textureKey)
+>>>>>>> Realcodex
       .setDepth(5);
 
     this.physics.add.existing(enemy);
     const body = enemy.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(true);
+<<<<<<< HEAD
     body.setVelocityX(50);
 
     const enemyData = {
@@ -6472,6 +9389,46 @@ export default class GameScene extends Phaser.Scene {
     };
 
     this.enemies.push(enemyData);
+=======
+    body.setCollideWorldBounds(true);
+    body.setBounce(0);
+    const surfaceSpawnY = this.getEnemySurfaceSpawnY(x, y, enemy.displayHeight || 24);
+    enemy.setY(surfaceSpawnY);
+    body.updateFromGameObject();
+    body.setVelocityX(enemyType === 'snow' ? 60 : enemyType === 'fire' ? 55 : 50);
+
+    const fireBeam = enemyType === 'fire'
+      ? this.add.graphics().setDepth(7)
+      : undefined;
+
+    const enemyData: (typeof this.enemies)[number] = {
+      sprite: enemy,
+      body: body,
+      hp: enemyType === 'snow' ? 4 : enemyType === 'fire' ? 3 : 3,
+      maxHp: enemyType === 'snow' ? 4 : enemyType === 'fire' ? 3 : 3,
+      patrolMin: x - patrolWidth / 2,
+      patrolMax: x + patrolWidth / 2,
+      speed: enemyType === 'snow' ? 70 : enemyType === 'fire' ? 60 : 50,
+      isDead: false,
+      enemyType,
+      snowballCooldown: enemyType === 'snow' ? 1000 : 0,
+      canBeDamagedBy:
+        enemyType === 'snow'
+          ? ['BLAZE_SPEECH']
+          : enemyType === 'fire'
+            ? ['FROST_THEN_SWORD']
+            : undefined,
+      fireState: enemyType === 'fire' ? 'ACTIVE' : undefined,
+      fireBeam,
+      fireBeamTargetX: enemyType === 'fire' ? enemy.x : undefined,
+      fireBeamTargetY: enemyType === 'fire' ? enemy.y : undefined,
+      fireBeamTickCooldown: 0,
+      frozenUntil: undefined,
+    };
+
+    this.enemies.push(enemyData);
+    this.setupEnemyPlatformCollision(enemy);
+>>>>>>> Realcodex
 
     // Add collision with tilemap layers
     if (this.map && this.map.layers) {
@@ -6483,16 +9440,373 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
+<<<<<<< HEAD
   private updateEnemyAI() {
     this.enemies.forEach(enemy => {
       if (enemy.isDead) return;
 
       // Patrol behavior
+=======
+  private throwSnowball(enemy: any, direction: number) {
+    if (this.isInsideAnyHookZone(enemy.sprite.x)) return;
+
+    if (!this.textures.exists('snowball')) {
+      const g = this.add.graphics();
+      g.fillStyle(0x93c5fd, 1);
+      g.fillCircle(6, 6, 6);
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(4, 4, 2);
+      g.generateTexture('snowball', 12, 12);
+      g.destroy();
+    }
+
+    const snowball = this.physics.add.image(
+      enemy.sprite.x + direction * 16,
+      enemy.sprite.y - 6,
+      'snowball'
+    ).setDepth(8);
+
+    const snowballBody = snowball.body as Phaser.Physics.Arcade.Body;
+    snowballBody.setAllowGravity(false);
+    snowballBody.setVelocityX(direction * 240);
+
+    this.snowballs.push(snowball);
+
+    this.physics.add.overlap(this.player, snowball, () => {
+      if (!snowball.active) return;
+      this.applyPlayerSnowSlow();
+      const idx = this.snowballs.indexOf(snowball);
+      if (idx > -1) {
+        this.snowballs.splice(idx, 1);
+      }
+      snowball.destroy();
+    }, undefined, this);
+
+    this.time.delayedCall(3000, () => {
+      const idx = this.snowballs.indexOf(snowball);
+      if (idx > -1) {
+        this.snowballs.splice(idx, 1);
+      }
+      if (snowball.active) {
+        snowball.destroy();
+      }
+    });
+  }
+
+  private updateSnowballs() {
+    for (let i = this.snowballs.length - 1; i >= 0; i--) {
+      const snowball = this.snowballs[i];
+      if (!snowball || !snowball.active) {
+        this.snowballs.splice(i, 1);
+        continue;
+      }
+
+      if (this.isInsideAnyHookZone(snowball.x)) {
+        snowball.destroy();
+        this.snowballs.splice(i, 1);
+        continue;
+      }
+
+      if (snowball.x < -400 || snowball.x > this.map.widthInPixels + 9000) {
+        snowball.destroy();
+        this.snowballs.splice(i, 1);
+      }
+    }
+  }
+
+  private applyPlayerSnowSlow() {
+    this.playerSlowMovementMultiplier = 0.55;
+
+    if (this.playerSlowTimer) {
+      this.playerSlowTimer.remove();
+      this.playerSlowTimer = undefined;
+    }
+
+    this.playerSlowTimer = this.time.delayedCall(1800, () => {
+      this.playerSlowMovementMultiplier = 1;
+      this.playerSlowTimer = undefined;
+    });
+  }
+
+  private freezeFireDemon(enemy: any, durationMs: number) {
+    if (!enemy || enemy.isDead || enemy.enemyType !== 'fire') return;
+
+    enemy.fireState = 'FROZEN';
+    enemy.frozenUntil = this.time.now + durationMs;
+    enemy.speed = 0;
+    enemy.body.setVelocityX(0);
+    enemy.sprite.setData('isFrozen', true);
+    enemy.sprite.setTint(0x93c5fd);
+    this.clearFireBeam(enemy);
+  }
+
+  private clearFireBeam(enemy: any) {
+    if (enemy?.fireBeam && enemy.fireBeam.active) {
+      enemy.fireBeam.clear();
+    }
+  }
+
+  private distancePointToSegment(
+    px: number,
+    py: number,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number
+  ): number {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    if (dx === 0 && dy === 0) return Phaser.Math.Distance.Between(px, py, x1, y1);
+
+    const t = Phaser.Math.Clamp(
+      ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy),
+      0,
+      1
+    );
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+    return Phaser.Math.Distance.Between(px, py, projX, projY);
+  }
+
+  private applyFireBeamDamageTick() {
+    if (this.isInvulnerable) return;
+
+    // Beam damage accumulates in milliseconds-equivalent chunks (tick is ~250ms).
+    this.fireBeamBurnMeter += 250;
+    if (this.fireBeamBurnDecayTimer) {
+      this.fireBeamBurnDecayTimer.remove();
+      this.fireBeamBurnDecayTimer = undefined;
+    }
+
+    // Require near-continuous contact: brief beam breaks reset buildup.
+    this.fireBeamBurnDecayTimer = this.time.delayedCall(500, () => {
+      this.fireBeamBurnMeter = 0;
+      this.fireBeamBurnDecayTimer = undefined;
+    });
+
+    // Kill after ~4 seconds of sustained beam contact.
+    if (this.fireBeamBurnMeter >= 4000) {
+      this.fireBeamBurnMeter = 0;
+      this.handlePlayerDeath();
+    }
+  }
+
+  private updateFireDemonAI(enemy: any, playerInHookZone: boolean) {
+    const { sprite, body } = enemy;
+    if (!sprite.active) return;
+
+    if (enemy.fireState === 'FROZEN') {
+      body.setVelocityX(0);
+      this.clearFireBeam(enemy);
+      if (enemy.frozenUntil !== undefined && this.time.now >= enemy.frozenUntil) {
+        enemy.fireState = 'ACTIVE';
+        enemy.frozenUntil = undefined;
+        enemy.sprite.setData('isFrozen', false);
+        enemy.sprite.clearTint();
+        enemy.speed = 60;
+      }
+      return;
+    }
+
+    const distanceToPlayer = Phaser.Math.Distance.Between(
+      sprite.x,
+      sprite.y,
+      this.player.x,
+      this.player.y
+    );
+
+    const shouldChase = distanceToPlayer < 650 && !playerInHookZone;
+    if (shouldChase) {
+      const direction = this.player.x > sprite.x ? 1 : -1;
+      body.setVelocityX(direction * enemy.speed);
+      sprite.setFlipX(direction < 0);
+    } else {
+      if (sprite.x <= enemy.patrolMin && body.velocity.x < 0) {
+        body.setVelocityX(enemy.speed * 0.8);
+      } else if (sprite.x >= enemy.patrolMax && body.velocity.x > 0) {
+        body.setVelocityX(-enemy.speed * 0.8);
+      }
+    }
+
+    for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+      const zone = this.hookZoneDefinitions[i];
+      if (sprite.x < zone.start && sprite.x > zone.start - 20 && body.velocity.x > 0) {
+        body.setVelocityX(0);
+        sprite.x = zone.start - 12;
+      } else if (sprite.x > zone.end && sprite.x < zone.end + 20 && body.velocity.x < 0) {
+        body.setVelocityX(0);
+        sprite.x = zone.end + 12;
+      }
+    }
+
+    const canBeamPlayer =
+      !playerInHookZone &&
+      distanceToPlayer < 520 &&
+      !this.isPathCrossingHookZone(sprite.x, this.player.x);
+
+    if (!canBeamPlayer) {
+      this.clearFireBeam(enemy);
+      return;
+    }
+
+    enemy.fireBeamTargetX = Phaser.Math.Linear(
+      enemy.fireBeamTargetX ?? this.player.x,
+      this.player.x,
+      0.08
+    );
+    enemy.fireBeamTargetY = Phaser.Math.Linear(
+      enemy.fireBeamTargetY ?? this.player.y,
+      this.player.y,
+      0.08
+    );
+
+    if (enemy.fireBeam && enemy.fireBeam.active) {
+      const beamStartX = sprite.x;
+      const beamStartY = sprite.y - 6;
+      const beamEndX = enemy.fireBeamTargetX;
+      const beamEndY = enemy.fireBeamTargetY;
+
+      enemy.fireBeam.clear();
+      enemy.fireBeam.lineStyle(7, 0xff4500, 0.75);
+      enemy.fireBeam.beginPath();
+      enemy.fireBeam.moveTo(beamStartX, beamStartY);
+      enemy.fireBeam.lineTo(beamEndX, beamEndY);
+      enemy.fireBeam.strokePath();
+
+      enemy.fireBeam.lineStyle(3, 0xfff07a, 0.9);
+      enemy.fireBeam.beginPath();
+      enemy.fireBeam.moveTo(beamStartX, beamStartY);
+      enemy.fireBeam.lineTo(beamEndX, beamEndY);
+      enemy.fireBeam.strokePath();
+
+      const playerDistanceToBeam = this.distancePointToSegment(
+        this.player.x,
+        this.player.y,
+        beamStartX,
+        beamStartY,
+        beamEndX,
+        beamEndY
+      );
+      enemy.fireBeamTickCooldown = Math.max(0, (enemy.fireBeamTickCooldown ?? 0) - 16);
+      if (playerDistanceToBeam <= 20 && enemy.fireBeamTickCooldown <= 0) {
+        this.applyFireBeamDamageTick();
+        enemy.fireBeamTickCooldown = 250;
+      }
+    }
+  }
+
+  private canEnemyBeDefeatedBy(enemy: any, source: string): boolean {
+    if (!enemy) return true;
+
+    if (enemy.enemyType === 'snow') {
+      return source === 'BLAZE_SPEECH';
+    }
+
+    if (enemy.enemyType === 'fire') {
+      if (source === 'SWORD') {
+        return enemy.fireState === 'FROZEN';
+      }
+      return false;
+    }
+
+    return true;
+  }
+
+  private destroySnowDemonsFromSpeechBlaze() {
+    this.enemies
+      .filter((enemy) => !enemy.isDead && enemy.enemyType === 'snow')
+      .forEach((enemy) => this.killEnemy(enemy, 'BLAZE_SPEECH'));
+  }
+
+  private updateSnowDemonAI(enemy: any, playerInHookZone: boolean) {
+    const { sprite, body } = enemy;
+
+    const isHardStopped = sprite.getData('isFrozen') || sprite.getData('isStunned') || sprite.getData('isParalyzed');
+    if (isHardStopped) {
+      enemy.snowballCooldown = Math.max(0, enemy.snowballCooldown - 16);
+      return;
+    }
+
+    const distanceToPlayer = Phaser.Math.Distance.Between(
+      sprite.x,
+      sprite.y,
+      this.player.x,
+      this.player.y
+    );
+    const shouldChase = distanceToPlayer < 600 && !playerInHookZone;
+
+    if (shouldChase) {
+      const direction = this.player.x > sprite.x ? 1 : -1;
+      body.setVelocityX(direction * enemy.speed);
+      sprite.setFlipX(direction < 0);
+
+      const canThrowAtPlayer =
+        distanceToPlayer < 500 &&
+        !this.isInsideAnyHookZone(this.player.x) &&
+        !this.isPathCrossingHookZone(sprite.x, this.player.x);
+
+      if (enemy.snowballCooldown <= 0 && canThrowAtPlayer) {
+        this.throwSnowball(enemy, direction);
+        enemy.snowballCooldown = 1700;
+      }
+    } else {
+      // Default to patrol when not actively chasing
+      if (sprite.x <= enemy.patrolMin && body.velocity.x < 0) {
+        body.setVelocityX(enemy.speed * 0.8);
+      } else if (sprite.x >= enemy.patrolMax && body.velocity.x > 0) {
+        body.setVelocityX(-enemy.speed * 0.8);
+      }
+    }
+
+    enemy.snowballCooldown = Math.max(0, enemy.snowballCooldown - 16);
+
+    for (let i = 0; i < this.hookZoneDefinitions.length; i++) {
+      const zone = this.hookZoneDefinitions[i];
+      if (sprite.x < zone.start && sprite.x > zone.start - 20 && body.velocity.x > 0) {
+        body.setVelocityX(0);
+        sprite.x = zone.start - 12;
+      } else if (sprite.x > zone.end && sprite.x < zone.end + 20 && body.velocity.x < 0) {
+        body.setVelocityX(0);
+        sprite.x = zone.end + 12;
+      }
+    }
+  }
+
+  private updateEnemyAI() {
+    const playerInHookZone = this.isInsideAnyHookZone(this.player.x);
+
+    this.enemies.forEach(enemy => {
+      if (enemy.isDead) return;
+
+      if (this.enforceEnemyHookZoneBoundary(enemy)) {
+        return;
+      }
+
+      if (enemy.enemyType === 'fire') {
+        this.updateFireDemonAI(enemy, playerInHookZone);
+        return;
+      }
+
+      if (enemy.enemyType === 'snow') {
+        this.updateSnowDemonAI(enemy, playerInHookZone);
+        return;
+      }
+
+      // Basic patrol behavior
+>>>>>>> Realcodex
       if (enemy.sprite.x <= enemy.patrolMin && enemy.body.velocity.x < 0) {
         enemy.body.setVelocityX(enemy.speed);
       } else if (enemy.sprite.x >= enemy.patrolMax && enemy.body.velocity.x > 0) {
         enemy.body.setVelocityX(-enemy.speed);
       }
+<<<<<<< HEAD
+=======
+
+      const projectedX = enemy.sprite.x + enemy.body.velocity.x * 0.1;
+      if (this.isPathCrossingHookZone(enemy.sprite.x, projectedX)) {
+        enemy.body.setVelocityX(-enemy.body.velocity.x);
+      }
+>>>>>>> Realcodex
     });
   }
 
@@ -6513,7 +9827,23 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+<<<<<<< HEAD
   private damageEnemy(enemy: any, damage: number) {
+=======
+  private damageEnemy(enemy: any, damage: number, source: string = 'GENERIC') {
+    if (!enemy || enemy.isDead) return;
+
+    if (!this.canEnemyBeDefeatedBy(enemy, source)) {
+      enemy.sprite.setTint(0x93c5fd);
+      this.time.delayedCall(100, () => {
+        if (!enemy.isDead) {
+          enemy.sprite.clearTint();
+        }
+      });
+      return;
+    }
+
+>>>>>>> Realcodex
     enemy.hp -= damage;
     
     // Flash red
@@ -6527,12 +9857,30 @@ export default class GameScene extends Phaser.Scene {
     console.log(`Enemy hit for ${damage} damage! HP: ${enemy.hp}/${enemy.maxHp}`);
 
     if (enemy.hp <= 0) {
+<<<<<<< HEAD
       this.killEnemy(enemy);
     }
   }
 
   private killEnemy(enemy: any) {
     enemy.isDead = true;
+=======
+      this.killEnemy(enemy, source);
+    }
+  }
+
+  private killEnemy(enemy: any, source: string = 'GENERIC') {
+    if (!enemy || enemy.isDead) return;
+    if (!this.canEnemyBeDefeatedBy(enemy, source)) return;
+
+    enemy.isDead = true;
+    enemy.fireState = 'DEAD';
+    enemy.frozenUntil = undefined;
+    if (enemy.fireBeam && enemy.fireBeam.active) {
+      enemy.fireBeam.destroy();
+      enemy.fireBeam = undefined;
+    }
+>>>>>>> Realcodex
     
     // Remove ice block if enemy was frozen
     if (enemy.sprite.getData('isFrozen')) {
@@ -6561,10 +9909,18 @@ export default class GameScene extends Phaser.Scene {
     // Death particles
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
+<<<<<<< HEAD
       const particle = this.add.rectangle(
         enemy.sprite.x + Math.cos(angle) * 15,
         enemy.sprite.y + Math.sin(angle) * 15,
         4, 4, 0xff4444
+=======
+      const particleColor = enemy.enemyType === 'snow' ? 0x93c5fd : 0xff4444;
+      const particle = this.add.rectangle(
+        enemy.sprite.x + Math.cos(angle) * 15,
+        enemy.sprite.y + Math.sin(angle) * 15,
+        4, 4, particleColor
+>>>>>>> Realcodex
       ).setDepth(15);
 
       this.tweens.add({
@@ -6611,10 +9967,53 @@ export default class GameScene extends Phaser.Scene {
   private handlePlayerDeath() {
     if (this.isInvulnerable) return;
 
+<<<<<<< HEAD
+=======
+    this.resetActiveHookZoneProgressOnDeath();
+
+    this.fireBeamBurnMeter = 0;
+    if (this.fireBeamBurnDecayTimer) {
+      this.fireBeamBurnDecayTimer.remove();
+      this.fireBeamBurnDecayTimer = undefined;
+    }
+
+>>>>>>> Realcodex
     this.isInvulnerable = true;
     this.lives -= 1;
     console.log(`💔 Lives remaining: ${this.lives}`);
 
+<<<<<<< HEAD
+=======
+    // ===== CRITICAL: Reset hook zone state to prevent crashes =====
+    // Stop all player tweens (traversal, suspension floating, etc.)
+    this.tweens.killTweensOf(this.player);
+    if (this.activeTraversalTween) {
+      this.activeTraversalTween.stop();
+      this.activeTraversalTween = undefined;
+    }
+
+    // Reset traversal and suspension state
+    this.isTraversing = false;
+    this.isSuspended = false;
+    this.manualControlEnabled = true;
+
+    // Clear suspension timer and effects
+    if (this.suspensionTimer) {
+      this.suspensionTimer.remove();
+      this.suspensionTimer = undefined;
+    }
+    if (this.suspensionGlowEffect) {
+      this.tweens.killTweensOf(this.suspensionGlowEffect);
+      this.suspensionGlowEffect.destroy();
+      this.suspensionGlowEffect = undefined;
+    }
+
+    // Clear suspension references
+    this.currentSuspendedNode = undefined;
+    this.suspensionLandingY = 0;
+    // ===== END hook zone state reset =====
+
+>>>>>>> Realcodex
     // Flash effect
     this.player.setTint(0xff0000);
     this.time.delayedCall(100, () => {
@@ -6625,8 +10024,16 @@ export default class GameScene extends Phaser.Scene {
       console.log('💀 Game Over!');
       this.scene.restart();
     } else {
+<<<<<<< HEAD
       // ALWAYS respawn at checkpoint once established, NEVER at spawn point
       if (this.checkpointReached && this.checkpointPosition) {
+=======
+      if (this.respawnOutsideHookZoneEntranceIfNeeded()) {
+        // Hook-zone deaths are zone-local and do not use global checkpoints
+      } else if (this.respawnAtCompletedHookZoneExitIfNeeded()) {
+        // Death just after a solved hook zone respawns at that zone's exit
+      } else if (this.checkpointReached && this.checkpointPosition) {
+>>>>>>> Realcodex
         // Respawn at established checkpoint
         this.player.setPosition(this.checkpointPosition.x, this.checkpointPosition.y);
         console.log(`🚩 Respawning at CHECKPOINT: (${this.checkpointPosition.x}, ${this.checkpointPosition.y})`);
@@ -6638,6 +10045,11 @@ export default class GameScene extends Phaser.Scene {
 
       const body = this.player.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0, 0);
+<<<<<<< HEAD
+=======
+      body.enable = true;  // Ensure body is enabled
+      body.setAllowGravity(true);  // Ensure gravity is enabled
+>>>>>>> Realcodex
 
       // Invulnerability period
       this.time.delayedCall(1000, () => {
@@ -6941,6 +10353,7 @@ export default class GameScene extends Phaser.Scene {
   // JUMUF COMPANION SYSTEM
   // ===========================
 
+<<<<<<< HEAD
   private createJumuf() {
     // Create Jumuf as a genie-like sprite (using a simple colored circle with glow)
     const graphics = this.add.graphics();
@@ -6958,6 +10371,101 @@ export default class GameScene extends Phaser.Scene {
     graphics.fillEllipse(0, 15, 16, 20);
     
     graphics.generateTexture('jumuf', 40, 50);
+=======
+  private createStaticGenieNpc() {
+    if (!this.textures.exists('genie_npc_static')) {
+      const g = this.add.graphics();
+      const px = 3;
+      const p = (x: number, y: number, w: number, h: number, color: number) => {
+        g.fillStyle(color, 1);
+        g.fillRect(x * px, y * px, w * px, h * px);
+      };
+
+      // Lamp
+      p(5, 17, 6, 2, 0xf59e0b);
+      p(4, 18, 2, 1, 0xf59e0b);
+      p(10, 18, 2, 1, 0xf59e0b);
+      p(7, 19, 2, 1, 0xf59e0b);
+
+      // Tail
+      p(7, 12, 2, 5, 0x38bdf8);
+      p(6, 14, 1, 2, 0x38bdf8);
+      p(9, 13, 1, 2, 0x0ea5e9);
+
+      // Body and arms
+      p(4, 7, 8, 5, 0x22d3ee);
+      p(3, 8, 1, 3, 0x38bdf8);
+      p(12, 8, 1, 3, 0x38bdf8);
+      p(4, 10, 8, 1, 0x0ea5e9);
+
+      // Head/face
+      p(5, 4, 6, 3, 0x38bdf8);
+      p(6, 5, 1, 1, 0x1f2937);
+      p(9, 5, 1, 1, 0x1f2937);
+
+      // Turban
+      p(5, 2, 6, 1, 0xf87171);
+      p(5, 3, 3, 1, 0xef4444);
+      p(9, 3, 2, 1, 0xf87171);
+
+      // Gold accents
+      p(4, 9, 1, 1, 0xf59e0b);
+      p(11, 9, 1, 1, 0xf59e0b);
+      p(6, 12, 4, 1, 0xf59e0b);
+
+      g.generateTexture('genie_npc_static', 16 * px, 20 * px);
+      g.destroy();
+    }
+
+    const groundY = this.map.heightInPixels - 16;
+    this.staticGenieNpc = this.add.image(660, groundY - 18, 'genie_npc_static')
+      .setOrigin(0.5, 1)
+      .setDepth(6);
+  }
+
+  private createJumuf() {
+    // Create Jumuf as a pixel-art genie companion (visual only; behavior unchanged)
+    const graphics = this.add.graphics();
+    const px = 3;
+    const p = (x: number, y: number, w: number, h: number, color: number) => {
+      graphics.fillStyle(color, 1);
+      graphics.fillRect(x * px, y * px, w * px, h * px);
+    };
+
+    // Lamp
+    p(5, 17, 6, 2, 0xf59e0b);
+    p(4, 18, 2, 1, 0xf59e0b);
+    p(10, 18, 2, 1, 0xf59e0b);
+    p(7, 19, 2, 1, 0xf59e0b);
+
+    // Tail
+    p(7, 12, 2, 5, 0x38bdf8);
+    p(6, 14, 1, 2, 0x38bdf8);
+    p(9, 13, 1, 2, 0x0ea5e9);
+
+    // Body and arms
+    p(4, 7, 8, 5, 0x22d3ee);
+    p(3, 8, 1, 3, 0x38bdf8);
+    p(12, 8, 1, 3, 0x38bdf8);
+    p(4, 10, 8, 1, 0x0ea5e9);
+
+    // Head/face
+    p(5, 4, 6, 3, 0x38bdf8);
+    p(6, 5, 1, 1, 0x1f2937);
+    p(9, 5, 1, 1, 0x1f2937);
+
+    // Turban
+    p(5, 2, 6, 1, 0xf87171);
+    p(5, 3, 3, 1, 0xef4444);
+    p(9, 3, 2, 1, 0xf87171);
+
+    // Gold accents
+    p(4, 9, 1, 1, 0xf59e0b);
+    p(11, 9, 1, 1, 0xf59e0b);
+    p(6, 12, 4, 1, 0xf59e0b);
+
+    graphics.generateTexture('jumuf', 16 * px, 20 * px);
+>>>>>>> Realcodex
     graphics.destroy();
 
     // Create Jumuf sprite
@@ -7215,6 +10723,26 @@ export default class GameScene extends Phaser.Scene {
 
   // PronunciationDoor system
   private pronunciationDoor?: PronunciationDoor;
+<<<<<<< HEAD
+=======
+  private levelCompletionTriggered = false;
+
+  public completeLevelFromDoor() {
+    if (this.levelCompletionTriggered) return;
+    this.levelCompletionTriggered = true;
+
+    (window as any).__GAME_PAUSED__ = true;
+    const body = this.player.body as Phaser.Physics.Arcade.Body | undefined;
+    if (body) {
+      body.setVelocity(0, 0);
+      body.setAcceleration(0, 0);
+    }
+
+    endSession();
+    showParentSummary();
+  }
+
+>>>>>>> Realcodex
 }
 
 // ===========================
@@ -7223,6 +10751,7 @@ export default class GameScene extends Phaser.Scene {
 
 class PronunciationDoor {
   private scene: Phaser.Scene;
+<<<<<<< HEAD
   public x: number;
   public y: number;
   private requiredWords: string[];
@@ -7265,10 +10794,45 @@ class PronunciationDoor {
     // Initialize progress array: 2 markers per word
     this.progress = new Array(requiredWords.length * 2).fill(false);
     
+=======
+  private player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+  public x: number;
+  public y: number;
+  private requiredWords: string[];
+  private currentWordIndex = 0;
+  private isUnlocked = false;
+  private isListening = false;
+  private isChallengeActive = false;
+  private activationDistance = 220;
+  private currentWordAttemptCount = 0;
+  private completionTriggered = false;
+
+  private doorSprite?: Phaser.Physics.Arcade.Sprite;
+  private doorCollider?: Phaser.Physics.Arcade.Collider;
+  private instructionText?: Phaser.GameObjects.Text;
+  private challengeUI?: Phaser.GameObjects.Container;
+  private currentWordText?: Phaser.GameObjects.Text;
+  private feedbackText?: Phaser.GameObjects.Text;
+
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    requiredWords: string[],
+    _jumufGiveHint: (text: string) => void,
+    _showJumuf: () => void
+  ) {
+    this.scene = scene;
+    this.player = (scene as any).player;
+    this.x = x;
+    this.y = y;
+    this.requiredWords = requiredWords.map((word) => word.toUpperCase().trim());
+>>>>>>> Realcodex
     this.create();
   }
 
   private create() {
+<<<<<<< HEAD
     // Try to use dungeon door sprite, fallback to generated sprite
     if (this.scene.textures.exists('dungeon_door')) {
       // Use loaded dungeon door sprite
@@ -7306,11 +10870,36 @@ class PronunciationDoor {
       // Glow effect around lock
       doorGraphics.fillStyle(0xff4444, 0.3);
       doorGraphics.fillRect(30, 50, 40, 45);
+=======
+    if (this.scene.textures.exists('dungeon_door')) {
+      this.doorSprite = this.scene.physics.add.sprite(this.x, this.y, 'dungeon_door')
+        .setDepth(10)
+        .setScale(1.15)
+        .setImmovable(true);
+    } else {
+      const doorGraphics = this.scene.add.graphics();
+      doorGraphics.fillStyle(0x4b5563, 1);
+      doorGraphics.fillRect(0, 0, 104, 144);
+      doorGraphics.fillStyle(0x7c6f64, 1);
+      doorGraphics.fillRect(6, 6, 92, 132);
+      doorGraphics.fillStyle(0x5b4636, 1);
+      doorGraphics.fillRect(12, 12, 80, 120);
+      doorGraphics.fillStyle(0x8b5a2b, 1);
+      doorGraphics.fillRect(18, 20, 68, 18);
+      doorGraphics.fillRect(18, 46, 68, 18);
+      doorGraphics.fillRect(18, 72, 68, 18);
+      doorGraphics.fillRect(18, 98, 68, 18);
+      doorGraphics.fillStyle(0x111827, 1);
+      doorGraphics.fillRect(48, 54, 8, 16);
+      doorGraphics.fillStyle(0xf59e0b, 1);
+      doorGraphics.fillCircle(78, 70, 5);
+>>>>>>> Realcodex
       doorGraphics.generateTexture('pronunciation_door', 100, 140);
       doorGraphics.destroy();
 
       this.doorSprite = this.scene.physics.add.sprite(this.x, this.y, 'pronunciation_door')
         .setDepth(10)
+<<<<<<< HEAD
         .setScale(1.2) // Make it slightly larger
         .setImmovable(true);
     }
@@ -7355,10 +10944,42 @@ class PronunciationDoor {
     this.createChallengeUI();
 
     // Listen for word-spoken events
+=======
+        .setScale(1.15)
+        .setImmovable(true);
+    }
+
+    if (!this.doorSprite) return;
+
+    const body = this.doorSprite.body as Phaser.Physics.Arcade.Body;
+    body.setAllowGravity(false);
+    body.setSize(90, 130);
+
+    this.doorCollider = this.scene.physics.add.collider(this.player, this.doorSprite);
+
+    this.instructionText = this.scene.add.text(
+      this.x,
+      this.y - 92,
+      'PRONUNCIATION GATE\nMOVE CLOSE OR PRESS G\nPRESS V TO SPEAK',
+      {
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        color: '#fcd34d',
+        stroke: '#000000',
+        strokeThickness: 3,
+        align: 'center'
+      }
+    )
+      .setOrigin(0.5)
+      .setDepth(20);
+
+    this.createChallengeUI();
+>>>>>>> Realcodex
     this.scene.events.on('word-spoken', this.handleWordSpoken, this);
   }
 
   private createChallengeUI() {
+<<<<<<< HEAD
     this.challengeUI = this.scene.add.container(400, 100)
       .setDepth(100)
       .setScrollFactor(0)
@@ -7580,11 +11201,112 @@ class PronunciationDoor {
 
     this.showJumuf();
     this.jumufGiveHint(hint);
+=======
+    this.challengeUI = this.scene.add.container(400, 105)
+      .setDepth(100)
+      .setScrollFactor(0)
+      .setVisible(false)
+      .setAlpha(0);
+
+    const bg = this.scene.add.rectangle(0, 0, 480, 128, 0x111827, 0.92)
+      .setStrokeStyle(2, 0xf59e0b, 1);
+    this.challengeUI.add(bg);
+
+    this.currentWordText = this.scene.add.text(0, -22, '', {
+      fontFamily: 'monospace',
+      fontSize: '22px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0.5);
+    this.challengeUI.add(this.currentWordText);
+
+    this.feedbackText = this.scene.add.text(0, 22, 'Press V and say the word clearly.', {
+      fontFamily: 'monospace',
+      fontSize: '16px',
+      color: '#93c5fd',
+      stroke: '#000000',
+      strokeThickness: 2,
+      align: 'center'
+    }).setOrigin(0.5);
+    this.challengeUI.add(this.feedbackText);
+  }
+
+  private beginChallenge() {
+    if (this.isUnlocked || this.isChallengeActive) return;
+
+    this.isChallengeActive = true;
+    this.isListening = true;
+
+    if (this.challengeUI) {
+      this.challengeUI.setVisible(true).setAlpha(1);
+    }
+
+    this.setCurrentWordText();
+    if (this.instructionText) {
+      this.instructionText.setText('PRONUNCIATION CHALLENGE ACTIVE\nPRESS V TO SPEAK');
+    }
+  }
+
+  private setCurrentWordText() {
+    if (!this.currentWordText) return;
+    this.currentWordAttemptCount = 0;
+    const currentWord = this.requiredWords[this.currentWordIndex];
+    this.currentWordText.setText(
+      `Say: ${currentWord} (${this.currentWordIndex + 1}/${this.requiredWords.length})`
+    );
+  }
+
+  private setFeedbackText(message: string, color: string) {
+    if (!this.feedbackText) return;
+    this.feedbackText.setText(message);
+    this.feedbackText.setColor(color);
+  }
+
+  private isWordMatch(spoken: string, required: string): boolean {
+    if (spoken === required) return true;
+    if (spoken.includes(required)) return true;
+    if (required.includes(spoken) && spoken.length >= Math.max(3, required.length - 2)) return true;
+
+    const wordBoundaryRegex = new RegExp(`\\b${required}\\b`, 'i');
+    return wordBoundaryRegex.test(spoken);
+  }
+
+  private handleWordSpoken(spokenWord: string) {
+    if (this.isUnlocked || !this.isListening || this.currentWordIndex >= this.requiredWords.length) {
+      return;
+    }
+
+    const normalizedSpoken = spokenWord.toUpperCase().trim();
+    const currentRequired = this.requiredWords[this.currentWordIndex];
+    this.currentWordAttemptCount++;
+
+    if (this.isWordMatch(normalizedSpoken, currentRequired)) {
+      trackDoorWordResult(currentRequired, true);
+      this.currentWordIndex++;
+
+      if (this.currentWordIndex >= this.requiredWords.length) {
+        this.setFeedbackText('Correct! Door unlocked.', '#86efac');
+        this.unlockDoor();
+        return;
+      }
+
+      this.setFeedbackText('Correct. Next word.', '#86efac');
+      this.setCurrentWordText();
+      return;
+    }
+
+    if (this.currentWordAttemptCount === 1) {
+      trackDoorWordResult(currentRequired, false);
+    }
+    this.setFeedbackText(`Try again: ${currentRequired}`, '#fca5a5');
+>>>>>>> Realcodex
   }
 
   private unlockDoor() {
     this.isUnlocked = true;
     this.isListening = false;
+<<<<<<< HEAD
 
     // Hide UI
     if (this.challengeUI) {
@@ -7799,12 +11521,81 @@ class PronunciationDoor {
         this.jumufGiveHint('Whenever you\'re ready, try saying the word again!');
       }
       this.idleTimer = 0;
+=======
+    this.isChallengeActive = false;
+
+    if (this.instructionText) {
+      this.instructionText
+        .setText('DOOR OPEN')
+        .setColor('#86efac');
+    }
+
+    if (this.doorCollider) {
+      this.doorCollider.destroy();
+      this.doorCollider = undefined;
+    }
+
+    if (this.doorSprite) {
+      this.doorSprite
+        .setTint(0x86efac)
+        .setAlpha(0.6);
+    }
+    if (this.challengeUI) {
+      this.challengeUI.setVisible(false);
+    }
+  }
+
+  public startListening() {
+    this.beginChallenge();
+  }
+
+  public isChallengeRunning(): boolean {
+    return this.isChallengeActive && !this.isUnlocked;
+  }
+
+  public update() {
+    if (this.isUnlocked) {
+      if (!this.completionTriggered && this.doorSprite) {
+        const playerBounds = this.player.getBounds();
+        const doorBounds = this.doorSprite.getBounds();
+        if (Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, doorBounds)) {
+          this.completionTriggered = true;
+          (this.scene as any).completeLevelFromDoor?.();
+        }
+      }
+      return;
+    }
+
+    const distanceToPlayer = Phaser.Math.Distance.Between(
+      this.player.x,
+      this.player.y,
+      this.x,
+      this.y
+    );
+
+    if (!this.isChallengeActive && distanceToPlayer <= this.activationDistance) {
+      this.beginChallenge();
+      return;
+    }
+
+    if (this.instructionText && !this.isChallengeActive) {
+      this.instructionText.setAlpha(distanceToPlayer <= 320 ? 1 : 0.75);
+    }
+
+    if (this.isChallengeActive && this.currentWordText) {
+      if (distanceToPlayer > 480) {
+        this.setFeedbackText('Move closer, then press V to continue.', '#fcd34d');
+      } else if (this.feedbackText?.text === 'Move closer, then press V to continue.') {
+        this.setFeedbackText('Press V and say the word clearly.', '#93c5fd');
+      }
+>>>>>>> Realcodex
     }
   }
 
   public destroy() {
     this.scene.events.off('word-spoken', this.handleWordSpoken, this);
     if (this.doorSprite) this.doorSprite.destroy();
+<<<<<<< HEAD
     if (this.doorLeftHalf) this.doorLeftHalf.destroy();
     if (this.doorRightHalf) this.doorRightHalf.destroy();
     if (this.challengeUI) this.challengeUI.destroy();
@@ -7814,3 +11605,10 @@ class PronunciationDoor {
   }
 }
 
+=======
+    if (this.challengeUI) this.challengeUI.destroy();
+    if (this.instructionText) this.instructionText.destroy();
+    if (this.doorCollider) this.doorCollider.destroy();
+  }
+}
+>>>>>>> Realcodex
